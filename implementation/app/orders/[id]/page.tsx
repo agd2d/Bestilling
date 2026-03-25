@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import OrderLabelsPanel from "@/components/OrderLabelsPanel";
 import OrderNotesPanel from "@/components/OrderNotesPanel";
 import OrderStatusSelect from "@/components/OrderStatusSelect";
+import { getLabelTone } from "@/lib/orders/order-labels";
 import { getOrderByIdData } from "@/lib/orders/order-queries";
 
 function pillClass(status: string) {
@@ -24,7 +26,7 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { order, source, message, notes } = await getOrderByIdData(id);
+  const { order, source, message, notes, availableLabels } = await getOrderByIdData(id);
 
   if (!order) notFound();
 
@@ -43,7 +45,7 @@ export default async function OrderDetailPage({
           </span>
           <span className={pillClass(order.status)}>{order.status}</span>
           {order.labels.map((label) => (
-            <span className="pill neutral" key={label}>
+            <span className={`pill ${getLabelTone(label)}`} key={label}>
               {label}
             </span>
           ))}
@@ -96,7 +98,15 @@ export default async function OrderDetailPage({
           </table>
         </div>
 
-        <OrderNotesPanel requestId={order.id} notes={notes} source={source} />
+        <div className="two-grid">
+          <OrderLabelsPanel
+            requestId={order.id}
+            availableLabels={availableLabels}
+            selectedLabelNames={order.labels}
+            source={source}
+          />
+          <OrderNotesPanel requestId={order.id} notes={notes} source={source} />
+        </div>
       </section>
     </main>
   );

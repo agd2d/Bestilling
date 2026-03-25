@@ -1,4 +1,5 @@
 import { hasEnv } from "@/lib/env";
+import { defaultOrderLabels, OrderLabelOption } from "@/lib/orders/order-labels";
 import { mockOrders, MockOrder, MockOrderLine } from "@/lib/orders/mock-orders";
 import { mockOrderNotes } from "@/lib/orders/mock-notes";
 import { OrderNoteItem } from "@/lib/orders/order-notes-actions";
@@ -38,6 +39,7 @@ interface SupplierRow {
 interface LabelRow {
   id: string;
   name: string;
+  color: string;
 }
 
 interface RequestLabelRow {
@@ -56,6 +58,7 @@ interface OrderNoteRow {
 export interface OrdersDataResult {
   orders: MockOrder[];
   notes: OrderNoteItem[];
+  availableLabels: OrderLabelOption[];
   source: "live" | "mock";
   message?: string;
 }
@@ -143,6 +146,7 @@ function buildLiveNotes(rows: OrderNoteRow[]): OrderNoteItem[] {
   return rows
     .map((row) => ({
       id: row.id,
+      requestId: row.request_id,
       author: row.author_user_id ? "Bruger" : "System",
       note: row.note,
       createdAt: formatDate(row.created_at),
@@ -153,6 +157,7 @@ function buildLiveNotes(rows: OrderNoteRow[]): OrderNoteItem[] {
 function getMockNotes(): OrderNoteItem[] {
   return mockOrderNotes.map((note) => ({
     id: note.id,
+    requestId: note.requestId,
     author: note.author,
     note: note.note,
     createdAt: note.createdAt,
@@ -164,6 +169,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
     return {
       orders: mockOrders,
       notes: getMockNotes(),
+      availableLabels: defaultOrderLabels,
       source: "mock",
       message: "Miljøvariabler mangler stadig, derfor vises mockdata.",
     };
@@ -191,7 +197,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
           "id, request_id, raw_product_number, raw_product_name, quantity, supplier_id, line_status, needs_action"
         ),
       supabase.from("suppliers").select("id, name"),
-      supabase.from("order_labels").select("id, name"),
+      supabase.from("order_labels").select("id, name, color"),
       supabase.from("request_label_links").select("request_id, label_id"),
       supabase.from("order_notes").select("id, request_id, note, created_at, author_user_id"),
     ]);
@@ -209,6 +215,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
       return {
         orders: mockOrders,
         notes: getMockNotes(),
+        availableLabels: defaultOrderLabels,
         source: "mock",
         message: `Live læsning fejlede: ${firstError.message}. Mockdata vises i stedet.`,
       };
@@ -224,6 +231,11 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
         requestLabels: (requestLabels ?? []) as RequestLabelRow[],
       }),
       notes: buildLiveNotes((notes ?? []) as OrderNoteRow[]),
+      availableLabels: ((labels ?? []) as LabelRow[]).map((label) => ({
+        id: label.id,
+        name: label.name,
+        color: label.color,
+      })),
       source: "live",
       message: "Data hentes nu fra Supabase.",
     };
@@ -231,6 +243,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
     return {
       orders: mockOrders,
       notes: getMockNotes(),
+      availableLabels: defaultOrderLabels,
       source: "mock",
       message:
         error instanceof Error
@@ -243,12 +256,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
 export async function getOrderByIdData(id: string) {
   const result = await getOrdersListData();
   const order = result.orders.find((item) => item.id === id) ?? null;
-  const notes =
-    result.source === "live"
-      ? result.notes
-      : result.notes.filter((note) =>
-          mockOrderNotes.some((mock) => mock.requestId === id && mock.id === note.id)
-        );
+  const notes = result.notes.filter((note) => note.requestId === id);
 
   return {
     ...result,

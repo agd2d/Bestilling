@@ -218,6 +218,11 @@ a {
   color: #a33d31;
 }
 
+.pill.info {
+  background: #dce7f7;
+  color: #31538f;
+}
+
 .pill.neutral {
   background: #ece8df;
   color: #5e615c;
@@ -272,6 +277,41 @@ a {
   border-radius: 16px;
   background: #f4f1e7;
   color: #5e665d;
+}
+
+.label-selector-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.label-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #ddd5c8;
+  border-radius: 16px;
+  background: #fffefb;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.label-toggle.selected {
+  border-color: #245741;
+  box-shadow: inset 0 0 0 1px #245741;
+}
+
+.label-toggle:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.label-toggle-meta {
+  color: #5e665d;
+  font-size: 0.85rem;
 }
 
 .two-grid {

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 export interface OrderNoteItem {
   id: string;
+  requestId?: string;
   author: string;
   note: string;
   createdAt: string;
@@ -15,10 +16,7 @@ export interface AddOrderNoteResult {
 }
 
 function canUseLiveData() {
-  return (
-    hasEnv("NEXT_PUBLIC_SUPABASE_URL") &&
-    hasEnv("SUPABASE_SERVICE_ROLE_KEY")
-  );
+  return hasEnv("NEXT_PUBLIC_SUPABASE_URL") && hasEnv("SUPABASE_SERVICE_ROLE_KEY");
 }
 
 export async function addOrderNote(params: {
