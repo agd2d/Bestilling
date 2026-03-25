@@ -7,3 +7,5 @@ implementation/node_modules/
 implementation/.env.local
 implementation/.vercel/
 implementation/npm-debug.log*
+
+.vercel
