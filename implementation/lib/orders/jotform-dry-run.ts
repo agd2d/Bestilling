@@ -7,6 +7,7 @@ import {
 } from "./jotform-types";
 import {
   fetchJotformSubmissions,
+  findCustomerMatchSuggestions,
   getDefaultJotformFieldConfig,
   parseJotformSubmission,
 } from "./jotform-sync";
@@ -60,6 +61,9 @@ export async function previewJotformOrderSync(params: {
   const preview = newSubmissions.slice(0, 10).map((submission: JotformSubmission) => {
     const parsed = parseJotformSubmission(submission, config);
     const customerId = customerLookup.get(normalize(parsed.locationLabel));
+    const suggestions = !customerId
+      ? findCustomerMatchSuggestions(parsed.locationLabel, params.customers)
+      : [];
 
     const linePreview = parsed.lines.map((line) => {
       const matchedProduct = line.rawProductNumber
@@ -80,6 +84,7 @@ export async function previewJotformOrderSync(params: {
       submissionId: parsed.submissionId,
       locationLabel: parsed.locationLabel,
       customerMatched: Boolean(customerId),
+      customerSuggestions: suggestions,
       lineCount: parsed.lines.length,
       lines: linePreview,
     };

@@ -18,6 +18,7 @@ export interface ParsedOrderLineInput {
   rawProductName: string | null;
   quantity: number | null;
   unit: string | null;
+  sourceFieldKey?: string | null;
 }
 
 export interface ParsedOrderInput {
@@ -132,6 +133,13 @@ export interface JotformFieldConfig {
   productNameLabels: string[];
   quantityLabels: string[];
   unitLabels: string[];
+}
+
+export interface CustomerMatchSuggestion {
+  customerId: string;
+  customerName: string;
+  score: number;
+  reason: string;
 }
 
 export interface JotformSyncRepository {

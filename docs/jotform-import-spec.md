@@ -273,3 +273,25 @@ Disse punkter bør verificeres mod den rigtige formular, før vi koder sync-rute
 2. Hvordan varelinjer er repræsenteret i formularen
 3. Om `delivery_address` findes som selvstændigt felt
 4. Om `unit` altid sendes med, eller skal hentes fra produktkartoteket
+
+## Faktisk formularstatus
+
+Det er nu verificeret mod den rigtige formular `260402556931353`:
+
+1. Kundelokation kommer fra dropdown-felt `146`
+   - label: `Lokation på kunden`
+
+2. Varer kommer ikke som repeatable linjer
+   - de kommer som mange `control_widget` inventory-felter
+   - hver vare har varenummer i feltets tekst, fx `Varenr. J401533`
+   - antal ligger i feltets svarværdi
+
+3. Importen skal derfor:
+   - finde alle widget-felter med positivt antal
+   - udlede varenummer fra feltteksten
+   - bruge feltteksten som råt varenavn
+
+4. Kundematch skal ikke være automatisk uden kontrol
+   - `customers` i `Kundedashboard` er fortsat sandhedskilde
+   - aliaser styres via `customer_import_aliases`
+   - godkendte aliaser vedligeholdes i [jotform-customer-mapping.csv](C:/Users/jonat/Hvidbjerg%20Service/Hvidbjerg%20Service%20-%20F%C3%A6llesdrev%20-%20Dokumenter/Udvikling%20-%20Software/Privat-kontor-pc/Bestillingsystem/docs/jotform-customer-mapping.csv)

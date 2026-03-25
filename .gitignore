@@ -2,6 +2,7 @@
 Thumbs.db
 
 node_modules/
+supabase/.temp/
 implementation/.next/
 implementation/node_modules/
 implementation/.env.local

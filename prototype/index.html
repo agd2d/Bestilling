@@ -167,6 +167,31 @@
             </div>
           </article>
 
+          <article class="panel import-flow-panel">
+            <div class="panel-header">
+              <h3>Kundemapping</h3>
+              <span class="panel-meta">Jotform mod Kundedashboard</span>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <strong>Fælles kundekilde</strong>
+                <p>Alle Jotform-lokationer skal ende i `customers` fra Kundedashboard og ikke i en separat kundeliste.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Godkendte aliaser</strong>
+                <p>Lokationer som `Telemark` og `Tækker Administration` styres via aliaser i `customer_import_aliases`.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Forslag før match</strong>
+                <p>Dry-run viser forslag til kunder, men importen må først matche endeligt når aliaset er godkendt.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Din styring</strong>
+                <p>Du definerer den endelige kobling i mapping-filen, og derefter importeres aliaserne ind i databasen.</p>
+              </div>
+            </div>
+          </article>
+
           <div class="two-column">
             <article class="panel">
               <div class="panel-header">

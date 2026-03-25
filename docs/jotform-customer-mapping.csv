@@ -1,0 +1,16 @@
+source,alias_value,suggested_customer_name,suggested_customer_id,approved_customer_name,approved_customer_id,note
+jotform,Amero,AMERO ApS,3ed99a44-d2a9-4d07-b2f2-dd704e5f2cbe,,,"Vælg om aliaset skal pege på drift- eller hovedkunde"
+jotform,BHS - Logistics,BHS Logistics A/S,33170d29-ea91-42ae-a306-12159acb5db9,,,
+jotform,ERIK Akitekter,ERIK arkitekter A/S - Aarhus Afd,433485a6-8392-4d90-a75a-a41d33ad9475,,,
+jotform,Ejsingholm,EJSINGHOLM ApS,c7dc31b6-8267-4890-bf5b-ae131e08e5d0,,,
+jotform,Ekolab,EKOLAB ApS,ab974eba-e611-4aa3-98fa-f04d2a18b3f1,,,
+jotform,Eriksen Group,Eriksen Group Holding A/S,3046bb15-48f9-4349-a226-d89a14c44935,,,"Afklar om aliaset skal pege på holding eller rengøringslinjen"
+jotform,Fynske Bank,FYNSKE BANK A/S,451f60cb-7794-4f79-a2bc-bf19c797fa25,,,
+jotform,Gorrissen Federspiel,Gorrissen Federspiel Advokatpartnerselskab,17a6d56e-e6ec-4009-aec9-f784eecd23cb,,,
+jotform,INNOVA Advokaterne,INNOVA ADVOKATFIRMA ADVOKATPARTNERSELSKAB,ed9b716a-522a-4bd0-bb26-2fe8130be6cc,,,
+jotform,Nordstern,Nordstern ApS,41bd3569-f29a-4f5b-b066-8442935bd0ef,,,
+jotform,Powermart,POWERMART ApS,17fdec03-43e0-4ee3-bb26-10f9de8245a3,,,"Afklar om det skal være virksomheden eller rengøringslinjen"
+jotform,Publico,PUBLICO KOMMUNIKATION ApS,28e02952-e88b-4f4e-b138-9a9e2a44e352,,,"Afklar om det skal være virksomheden eller rengøringslinjen"
+jotform,Telemark,TELE-MARK A/S,4e5f2b3e-c796-41f7-a5aa-6f5bdbf64483,,,
+jotform,The Company Group,THE COMPANY GROUP A/S,e5490f68-ffa4-4fa1-9f11-f93142cf9e1f,,,"Afklar om det skal være virksomheden eller rengøringslinjen"
+jotform,Tækker Administration,TÆKKER-ADMINISTRATION ApS,6c6d73a0-8447-4134-84d4-570aaf85d2c1,,,

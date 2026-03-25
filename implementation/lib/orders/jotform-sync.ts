@@ -1,4 +1,5 @@
 import {
+  CustomerMatchSuggestion,
   CustomerAliasRecord,
   CustomerProductPriceRecord,
   CustomerRecord,
@@ -18,7 +19,164 @@ const DEFAULT_PAGE_SIZE = 100;
 const JOTFORM_BASE = "https://eu-api.jotform.com";
 
 function normalize(value: string | null | undefined) {
-  return (value ?? "").trim().toLowerCase();
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " og ")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeCompact(value: string | null | undefined) {
+  return normalize(value).replace(/\s+/g, "");
+}
+
+function stripCompanyNoise(value: string | null | undefined) {
+  return normalize(value)
+    .replace(
+      /\b(aps|a s|a\/s|as|ivs|p s|p\/s|ps|holding|advokatpartnerselskab|advokatfirma|rengoring|rengøring|piccoteam|afdeling|afd|kontor|privat|akut|med|tillaeg|tillag)\b/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractProductNumberFromLabel(value: string | null | undefined) {
+  if (!value) return null;
+
+  const patterns = [
+    /varenr\.?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\-./]*)/i,
+    /vare nr\.?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\-./]*)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = value.match(pattern);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+
+  return null;
+}
+
+function stripProductNumberFromLabel(value: string | null | undefined) {
+  if (!value) return null;
+
+  const cleaned = value
+    .replace(/\s*[-–]?\s*varenr\.?.*$/i, "")
+    .replace(/\s*[-–]?\s*vare nr\.?.*$/i, "")
+    .trim();
+
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function isInventoryWidget(answer: JotformAnswer) {
+  return answer.type === "control_widget";
+}
+
+function isMeaningfulQuantity(value: number | null) {
+  return value !== null && Number.isFinite(value) && value > 0;
+}
+
+function tryParseInventoryWidgetLines(
+  answers: Record<string, JotformAnswer>
+): ParsedOrderLineInput[] {
+  return Object.entries(answers)
+    .filter(([, answer]) => isInventoryWidget(answer) && isMeaningfulQuantity(extractNumber(answer.answer)))
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([key, answer], index) => {
+      const label = extractText(answer.answer) ? answer.text : answer.text;
+      const rawProductNumber =
+        extractProductNumberFromLabel(answer.text) ??
+        extractProductNumberFromLabel(answer.name);
+      const rawProductName =
+        stripProductNumberFromLabel(answer.text) ??
+        stripProductNumberFromLabel(answer.name) ??
+        null;
+
+      return {
+        lineNumber: index + 1,
+        rawProductNumber,
+        rawProductName,
+        quantity: extractNumber(answer.answer),
+        unit: null,
+        sourceFieldKey: key,
+      };
+    });
+}
+
+function scoreCustomerCandidate(label: string, customerName: string) {
+  const labelNormalized = normalize(label);
+  const customerNormalized = normalize(customerName);
+  const labelCompact = normalizeCompact(label);
+  const customerCompact = normalizeCompact(customerName);
+  const labelStripped = stripCompanyNoise(label);
+  const customerStripped = stripCompanyNoise(customerName);
+
+  if (!labelNormalized || !customerNormalized) {
+    return null;
+  }
+
+  if (labelNormalized === customerNormalized || labelCompact === customerCompact) {
+    return { score: 100, reason: "Eksakt normaliseret match" };
+  }
+
+  if (labelStripped && customerStripped && labelStripped === customerStripped) {
+    return { score: 97, reason: "Match uden selskabs-/driftsord" };
+  }
+
+  if (customerStripped && labelStripped.includes(customerStripped)) {
+    return { score: 92, reason: "Jotform-navn indeholder kundens kerneord" };
+  }
+
+  if (labelStripped && customerStripped.includes(labelStripped)) {
+    return { score: 90, reason: "Kundens navn indeholder Jotform-navnet" };
+  }
+
+  const labelTokens = new Set(labelStripped.split(" ").filter((token) => token.length > 2));
+  const customerTokens = customerStripped.split(" ").filter((token) => token.length > 2);
+  const overlap = customerTokens.filter((token) => labelTokens.has(token));
+
+  if (overlap.length >= 2) {
+    return {
+      score: 80 + overlap.length,
+      reason: `Deler ${overlap.length} kerneord: ${overlap.join(", ")}`,
+    };
+  }
+
+  if (overlap.length === 1) {
+    return {
+      score: 72,
+      reason: `Deler kerneordet ${overlap[0]}`,
+    };
+  }
+
+  return null;
+}
+
+export function findCustomerMatchSuggestions(
+  locationLabel: string | null | undefined,
+  customers: CustomerRecord[]
+): CustomerMatchSuggestion[] {
+  if (!locationLabel) return [];
+
+  return customers
+    .filter((customer): customer is CustomerRecord & { name: string } => Boolean(customer.name))
+    .map((customer) => {
+      const scored = scoreCustomerCandidate(locationLabel, customer.name);
+      if (!scored) return null;
+
+      return {
+        customerId: customer.id,
+        customerName: customer.name,
+        score: scored.score,
+        reason: scored.reason,
+      };
+    })
+    .filter((candidate): candidate is CustomerMatchSuggestion => candidate !== null)
+    .sort((a, b) => b.score - a.score || a.customerName.localeCompare(b.customerName))
+    .slice(0, 3);
 }
 
 function answerMatches(answer: JotformAnswer, candidates: string[]) {
@@ -203,6 +361,10 @@ export function parseJotformSubmission(
     lines = groupIndexedLineFields(submission.answers, config);
   }
 
+  if (lines.length === 0) {
+    lines = tryParseInventoryWidgetLines(submission.answers);
+  }
+
   return {
     submissionId: submission.id,
     submittedAt: submission.created_at,
@@ -226,11 +388,23 @@ function buildCustomerLookup(
   for (const customer of customers) {
     if (customer.name) {
       lookup.set(normalize(customer.name), customer.id);
+      lookup.set(normalizeCompact(customer.name), customer.id);
+      const stripped = stripCompanyNoise(customer.name);
+      if (stripped) {
+        lookup.set(stripped, customer.id);
+        lookup.set(stripped.replace(/\s+/g, ""), customer.id);
+      }
     }
   }
 
   for (const alias of aliases) {
     lookup.set(normalize(alias.alias_value), alias.customer_id);
+    lookup.set(normalizeCompact(alias.alias_value), alias.customer_id);
+    const stripped = stripCompanyNoise(alias.alias_value);
+    if (stripped) {
+      lookup.set(stripped, alias.customer_id);
+      lookup.set(stripped.replace(/\s+/g, ""), alias.customer_id);
+    }
   }
 
   return lookup;
@@ -332,7 +506,10 @@ export async function syncJotformOrderSubmissions(params: {
   for (const submission of submissions) {
     const parsed = parseJotformSubmission(submission, config);
     const locationKey = normalize(parsed.locationLabel);
-    const customerId = customerLookup.get(locationKey);
+    const customerId =
+      customerLookup.get(locationKey) ??
+      customerLookup.get(normalizeCompact(parsed.locationLabel)) ??
+      customerLookup.get(stripCompanyNoise(parsed.locationLabel));
 
     if (!parsed.locationLabel || !customerId) {
       failedCustomerMatches += 1;
