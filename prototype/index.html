@@ -1,0 +1,629 @@
+﻿<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Varebestilling Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-kicker">Hvidbjerg Service</div>
+          <h1>Varebestilling</h1>
+          <p>Visuelt testmiljÃ¸ med mockdata</p>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-link active" data-view="overview">Overblik</button>
+          <button class="nav-link" data-view="requests">Kundebestillinger</button>
+          <button class="nav-link" data-view="request-detail">Ordredetalje</button>
+          <button class="nav-link" data-view="impl-orders">Implementation ordrevisning</button>
+          <button class="nav-link" data-view="purchase-orders">LeverandÃ¸rbestillinger</button>
+          <button class="nav-link" data-view="inbox">Mailindbakke</button>
+          <button class="nav-link" data-view="products">Varekatalog</button>
+        </nav>
+
+        <div class="sidebar-note">
+          Flowet viser, hvordan Ã©n Jotform-bestilling bliver til sporbare ordrelinjer, som senere kan samles pr. leverandÃ¸r.
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Prototype</p>
+            <h2 id="view-title">Overblik</h2>
+          </div>
+          <div class="topbar-actions">
+            <span class="chip neutral">Mockdata</span>
+            <span class="chip success">Klar til review</span>
+            <span class="chip info">Integrationstrin 6</span>
+          </div>
+        </header>
+
+        <section class="view active" id="view-overview">
+          <div class="card-grid">
+            <article class="metric-card">
+              <span class="metric-label">Ã…bne kundebestillinger</span>
+              <strong class="metric-value">18</strong>
+              <span class="metric-meta">5 nye siden i gÃ¥r</span>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Linjer klar til bestilling</span>
+              <strong class="metric-value">42</strong>
+              <span class="metric-meta">Fordelt pÃ¥ 3 leverandÃ¸rer</span>
+            </article>
+            <article class="metric-card warn">
+              <span class="metric-label">KrÃ¦ver handling</span>
+              <strong class="metric-value">7</strong>
+              <span class="metric-meta">Ukendt vare eller ugyldig mÃ¦ngde</span>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Mails til review</span>
+              <strong class="metric-value">4</strong>
+              <span class="metric-meta">Outlook-indbakke</span>
+            </article>
+          </div>
+
+          <article class="panel import-flow-panel">
+            <div class="panel-header">
+              <h3>Jotform syncflow</h3>
+              <span class="panel-meta">Trin 5 prototype</span>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <strong>1. Hent submissions</strong>
+                <p>Systemet henter kun nye Jotform-indsendelser og springer kendte `submission_id` over.</p>
+              </div>
+              <div class="flow-step">
+                <strong>2. Match kunde</strong>
+                <p>`Lokation pÃ¥ kunden - [kundenavn]` matches mod `customers` og `customer_import_aliases`.</p>
+              </div>
+              <div class="flow-step">
+                <strong>3. Match varer</strong>
+                <p>Varenummer kobles mod kataloget. Ukendte varer bliver til linjer med `krÃ¦ver handling`.</p>
+              </div>
+              <div class="flow-step">
+                <strong>4. Opret ordre</strong>
+                <p>Der oprettes Ã©n kundebestilling og Ã©n rÃ¦kke pr. varelinje i databasen.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel import-flow-panel">
+            <div class="panel-header">
+              <h3>Integrationsstatus</h3>
+              <span class="panel-meta">Trin 6 prototype</span>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <strong>Next app</strong>
+                <p>Et isoleret app-skelet er nu oprettet med samme stack som Kundedashboard.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Supabase wiring</strong>
+                <p>Server client og admin client er gjort rigtige og lÃ¦ser miljÃ¸variabler.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Mangler fÃ¸r test</strong>
+                <p>Dependencies, `.env.local`, tabeller og prÃ¦cis feltmapping skal pÃ¥ plads.</p>
+              </div>
+              <div class="flow-step">
+                <strong>NÃ¦ste live check</strong>
+                <p>Start appen lokalt og kald sync-ruten mod en rigtig Jotform-formular.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel import-flow-panel">
+            <div class="panel-header">
+              <h3>Live test-forlÃ¸b</h3>
+              <span class="panel-meta">Trin 7 prototype</span>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <strong>1. Tjek miljÃ¸</strong>
+                <p>KÃ¸r `GET /api/health/env` og se om alle nÃ¸gler er sat.</p>
+              </div>
+              <div class="flow-step">
+                <strong>2. Dry run</strong>
+                <p>KÃ¸r `POST /api/sync/orders/jotform?dryRun=true` for at se match uden inserts.</p>
+              </div>
+              <div class="flow-step">
+                <strong>3. Auth-strategi</strong>
+                <p>Brug rigtig login-cookie eller sÃ¦t `DEV_BYPASS_AUTH=true` i det isolerede miljÃ¸.</p>
+              </div>
+              <div class="flow-step">
+                <strong>4. Rigtig sync</strong>
+                <p>NÃ¥r preview ser rigtigt ud, kÃ¸r den normale sync-route og skriv til databasen.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel import-flow-panel">
+            <div class="panel-header">
+              <h3>UI Dry Run SkÃ¦rm</h3>
+              <span class="panel-meta">Trin 8 prototype</span>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <strong>MiljÃ¸status i browser</strong>
+                <p>Den isolerede app viser nu hvilke miljÃ¸variabler der mangler eller er klar.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Knap til dry run</strong>
+                <p>Du kan kÃ¸re Jotform preview direkte fra UI i stedet for kun via API-call.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Preview af submissions</strong>
+                <p>UI viser lokation, kundematch og hvilke varelinjer der krÃ¦ver handling.</p>
+              </div>
+              <div class="flow-step">
+                <strong>NÃ¦ste naturlige step</strong>
+                <p>NÃ¥r preview ser rigtigt ud, kan vi bygge rigtig ordreoversigt pÃ¥ samme data.</p>
+              </div>
+            </div>
+          </article>
+
+          <div class="two-column">
+            <article class="panel">
+              <div class="panel-header">
+                <h3>KrÃ¦ver handling</h3>
+                <span class="panel-meta">FÃ¸r prioritet</span>
+              </div>
+              <div class="list">
+                <button class="list-item goto-detail" type="button">
+                  <div>
+                    <strong>Lokation pÃ¥ kunden - Plejecenter SolhÃ¸j</strong>
+                    <p>Linje 2: varenummer `TR-99881` findes ikke</p>
+                  </div>
+                  <span class="status-pill danger">Kladde nÃ¸dvendig</span>
+                </button>
+                <div class="list-item">
+                  <div>
+                    <strong>Lokation pÃ¥ kunden - BÃ¸rnehuset Egebo</strong>
+                    <p>Linje 1: mÃ¦ngde kunne ikke tolkes</p>
+                  </div>
+                  <span class="status-pill warning">KrÃ¦ver tjek</span>
+                </div>
+                <div class="list-item">
+                  <div>
+                    <strong>Lokation pÃ¥ kunden - KontorfÃ¦llesskab Nord</strong>
+                    <p>Kundenavn matcher ikke sikkert kundetabellen</p>
+                  </div>
+                  <span class="status-pill warning">Alias mangler</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-header">
+                <h3>Klar til leverandÃ¸rbestilling</h3>
+                <span class="panel-meta">Denne uge</span>
+              </div>
+              <div class="supplier-stack">
+                <div class="supplier-card">
+                  <div>
+                    <strong>Total Rent</strong>
+                    <p>27 linjer fra 9 kunder</p>
+                  </div>
+                  <span class="status-pill success">Klar</span>
+                </div>
+                <div class="supplier-card">
+                  <div>
+                    <strong>Abena</strong>
+                    <p>9 linjer fra 3 kunder</p>
+                  </div>
+                  <span class="status-pill success">Klar</span>
+                </div>
+                <div class="supplier-card">
+                  <div>
+                    <strong>SanistÃ¥l</strong>
+                    <p>6 linjer fra 2 kunder</p>
+                  </div>
+                  <span class="status-pill neutral">Afventer</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-requests">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Kundebestillinger</h3>
+              <div class="filters">
+                <span class="chip info">12 importeret fra Jotform</span>
+                <span class="chip neutral">Ã…bne</span>
+                <span class="chip neutral">KrÃ¦ver handling</span>
+                <span class="chip neutral">Total Rent</span>
+              </div>
+            </div>
+
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Lokation</th>
+                  <th>Kunde</th>
+                  <th>Linjer</th>
+                  <th>Status</th>
+                  <th>Labels</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="clickable-row goto-detail">
+                  <td>Lokation pÃ¥ kunden - Plejecenter SolhÃ¸j</td>
+                  <td>Plejecenter SolhÃ¸j</td>
+                  <td>4</td>
+                  <td><span class="status-pill warning">KrÃ¦ver handling</span></td>
+                  <td><span class="mini-label slate">afventer afklaring</span></td>
+                </tr>
+                <tr>
+                  <td>Lokation pÃ¥ kunden - BÃ¸rnehuset Egebo</td>
+                  <td>BÃ¸rnehuset Egebo</td>
+                  <td>3</td>
+                  <td><span class="status-pill neutral">Oprettet</span></td>
+                  <td><span class="mini-label red">haste</span></td>
+                </tr>
+                <tr>
+                  <td>Lokation pÃ¥ kunden - KontorfÃ¦llesskab Nord</td>
+                  <td>KontorfÃ¦llesskab Nord</td>
+                  <td>6</td>
+                  <td><span class="status-pill success">Klar til bestilling</span></td>
+                  <td><span class="mini-label green">klar til bestilling</span></td>
+                </tr>
+                <tr>
+                  <td>Lokation pÃ¥ kunden - Enghaven Skole</td>
+                  <td>Enghaven Skole</td>
+                  <td>2</td>
+                  <td><span class="status-pill info">Afsendt</span></td>
+                  <td><span class="mini-label amber">restordre</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <section class="view" id="view-request-detail">
+          <div class="detail-layout">
+            <article class="panel">
+              <div class="detail-header">
+                <div>
+                  <p class="eyebrow">Kundebestilling</p>
+                  <h3>Lokation pÃ¥ kunden - Plejecenter SolhÃ¸j</h3>
+                  <p class="detail-meta">Indsendt via Jotform af Maria Hansen Â· 24. marts 2026 09:12</p>
+                </div>
+                <span class="status-pill warning large">KrÃ¦ver handling</span>
+              </div>
+
+              <div class="summary-grid">
+                <div>
+                  <span class="summary-label">Kunde</span>
+                  <strong>Plejecenter SolhÃ¸j</strong>
+                </div>
+                <div>
+                  <span class="summary-label">Leveringsadresse</span>
+                  <strong>SolhÃ¸jvej 14, 7600 Struer</strong>
+                </div>
+                <div>
+                  <span class="summary-label">Ã˜nsket levering</span>
+                  <strong>26. marts 2026</strong>
+                </div>
+                <div>
+                  <span class="summary-label">Labels</span>
+                  <div class="label-row">
+                    <span class="mini-label slate">afventer afklaring</span>
+                    <span class="mini-label red">haste</span>
+                  </div>
+                </div>
+              </div>
+
+              <h4 class="subheading">Varelinjer</h4>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Varenr.</th>
+                    <th>Varenavn</th>
+                    <th>Antal</th>
+                    <th>LeverandÃ¸r</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>TR-10234</td>
+                    <td>AffaldssÃ¦kke 100L</td>
+                    <td>8</td>
+                    <td>Total Rent</td>
+                    <td><span class="status-pill success">Klar til bestilling</span></td>
+                  </tr>
+                  <tr class="highlight-row">
+                    <td>TR-99881</td>
+                    <td>Ukendt vare fra Jotform</td>
+                    <td>2</td>
+                    <td>Ukendt</td>
+                    <td><span class="status-pill danger">Kladde nÃ¸dvendig</span></td>
+                  </tr>
+                  <tr>
+                    <td>TR-44210</td>
+                    <td>Toiletpapir premium</td>
+                    <td>12</td>
+                    <td>Total Rent</td>
+                    <td><span class="status-pill success">Klar til bestilling</span></td>
+                  </tr>
+                  <tr>
+                    <td>AB-2811</td>
+                    <td>Engangshandsker</td>
+                    <td>5</td>
+                    <td>Abena</td>
+                    <td><span class="status-pill success">Klar til bestilling</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+
+            <aside class="detail-sidebar">
+              <article class="panel">
+                <div class="panel-header">
+                  <h3>Handling</h3>
+                </div>
+                <div class="action-list">
+                  <div class="action-block">
+                    <strong>Forslag til varekladde</strong>
+                    <p>Varenummer `TR-99881` kan oprettes som ny vare under Total Rent.</p>
+                    <button class="action-button">Godkend kladde</button>
+                  </div>
+                  <div class="action-block">
+                    <strong>NÃ¦ste flow</strong>
+                    <p>NÃ¥r alle linjer er afklaret, kan de samles pr. leverandÃ¸r og blive til en intern leverandÃ¸rbestilling.</p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-header">
+                  <h3>Noter</h3>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-item">
+                    <strong>System Â· 09:13</strong>
+                    <p>Kunde matchet via alias og 3 af 4 varer fundet i kataloget.</p>
+                  </div>
+                  <div class="timeline-item">
+                    <strong>Jonatan Â· 10:04</strong>
+                    <p>Afventer afklaring pÃ¥ varenummer TR-99881.</p>
+                  </div>
+                  <div class="timeline-item">
+                    <strong>System Â· 09:12</strong>
+                    <p>Ordre importeret fra Jotform med 4 linjer.</p>
+                  </div>
+                </div>
+              </article>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-impl-orders">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Implementation ordreoversigt</h3>
+              <span class="panel-meta">Trin 11 prototype</span>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <strong>Ny rigtig skÃ¦rm</strong>
+                <p>Implementationen har nu en faktisk `/orders`-side med KPI'er og ordretabel.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Mockdata fÃ¸rst</strong>
+                <p>SkÃ¦rmen bruger nu live data hvis Supabase er klar, og falder ellers tilbage til mockdata.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Detaljeside</strong>
+                <p>Der findes nu ogsÃ¥ en `/orders/[id]`-oplevelse for de enkelte kundebestillinger.</p>
+              </div>
+              <div class="flow-step">
+                <strong>NÃ¦ste skridt</strong>
+                <p>NÃ¦ste runde kan flytte fokus fra lÃ¦sning til redigering og statusÃ¦ndringer.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Hvad du nu kan teste</h3>
+            </div>
+            <div class="list">
+              <div class="list-item">
+                <div>
+                  <strong>Forside</strong>
+                  <p>Dry run og miljÃ¸check pÃ¥ implementationens `/`.</p>
+                </div>
+                <span class="status-pill info">Klar</span>
+              </div>
+              <div class="list-item">
+                <div>
+                  <strong>Ordreoversigt</strong>
+                  <p>FÃ¸rste moduloplevelse pÃ¥ implementationens `/orders`.</p>
+                </div>
+                <span class="status-pill success">Klar</span>
+              </div>
+              <div class="list-item">
+                <div>
+                  <strong>Ordredetalje</strong>
+                  <p>Visning af linjer, labels og handlinger pÃ¥ implementationens `/orders/[id]`.</p>
+                </div>
+                <span class="status-pill success">Klar</span>
+              </div>
+              <div class="list-item">
+                <div>
+                  <strong>Statusændring</strong>
+                  <p>Du kan nu ændre ordrestatus fra UI. Ved live data skrives den til Supabase, ellers kører den som mock fallback.</p>
+                </div>
+                <span class="status-pill warning">Ny</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="view-purchase-orders">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Samlede leverandÃ¸rbestillinger</h3>
+              <span class="panel-meta">Ugens kladder</span>
+            </div>
+            <div class="list">
+              <div class="list-item">
+                <div>
+                  <strong>Total Rent Â· kladde</strong>
+                  <p>27 linjer fra 9 kunder Â· mailtekst klar til kopi</p>
+                </div>
+                <span class="status-pill success">Klar til afsendelse</span>
+              </div>
+              <div class="list-item">
+                <div>
+                  <strong>Abena Â· kladde</strong>
+                  <p>9 linjer fra 3 kunder</p>
+                </div>
+                <span class="status-pill neutral">Udkast</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="view-inbox">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Mailindbakke</h3>
+              <span class="panel-meta">bestilling@hvidbjerg-service.dk</span>
+            </div>
+            <div class="list">
+              <div class="list-item">
+                <div>
+                  <strong>Kundeservice - Total Rent</strong>
+                  <p>OrdrebekrÃ¦ftelse Â· forslag til match med PO-2026-031</p>
+                </div>
+                <span class="status-pill warning">Afventer review</span>
+              </div>
+              <div class="list-item">
+                <div>
+                  <strong>Lager2 - Total Rent</strong>
+                  <p>LeveringsbekrÃ¦ftelse med foto Â· 2 vedhÃ¦ftninger</p>
+                </div>
+                <span class="status-pill neutral">Ny</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="view-products">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Varekatalog</h3>
+              <span class="panel-meta">Excel-import preview</span>
+            </div>
+            <div class="import-preview">
+              <div class="import-dropzone">
+                <strong>Upload varefil</strong>
+                <p>`varer-marts-2026.xlsx` er lÃ¦st ind som preview. FÃ¸rste sheet bruges, og varenummer er nÃ¸gle til opret/opdater.</p>
+                <div class="topbar-actions">
+                  <span class="chip success">18 nye</span>
+                  <span class="chip info">97 opdateres</span>
+                  <span class="chip danger">5 fejl</span>
+                </div>
+              </div>
+
+              <div class="import-results-grid">
+                <div class="import-summary-card">
+                  <span class="summary-label">Kolonner fundet</span>
+                  <strong>varenummer, varenavn, leverandÃ¸r, pris, enhed, aktiv</strong>
+                </div>
+                <div class="import-summary-card">
+                  <span class="summary-label">Importstrategi</span>
+                  <strong>Preview fÃ¸rst, commit bagefter</strong>
+                </div>
+              </div>
+
+              <h4 class="subheading">Preview af rÃ¦kker</h4>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Varenr.</th>
+                    <th>Varenavn</th>
+                    <th>LeverandÃ¸r</th>
+                    <th>Pris</th>
+                    <th>Resultat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>TR-10234</td>
+                    <td>AffaldssÃ¦kke 100L</td>
+                    <td>Total Rent</td>
+                    <td>89,50</td>
+                    <td><span class="status-pill info">Opdateres</span></td>
+                  </tr>
+                  <tr>
+                    <td>AB-2811</td>
+                    <td>Engangshandsker</td>
+                    <td>Abena</td>
+                    <td>45,00</td>
+                    <td><span class="status-pill success">Ny vare</span></td>
+                  </tr>
+                  <tr class="highlight-row">
+                    <td></td>
+                    <td>Specialklud blÃ¥</td>
+                    <td>Total Rent</td>
+                    <td>12,00</td>
+                    <td><span class="status-pill danger">Fejl: mangler varenummer</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Varenr.</th>
+                  <th>Varenavn</th>
+                  <th>LeverandÃ¸r</th>
+                  <th>Enhed</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>TR-10234</td>
+                  <td>AffaldssÃ¦kke 100L</td>
+                  <td>Total Rent</td>
+                  <td>rulle</td>
+                  <td><span class="status-pill success">Aktiv</span></td>
+                </tr>
+                <tr>
+                  <td>AB-2811</td>
+                  <td>Engangshandsker</td>
+                  <td>Abena</td>
+                  <td>pakke</td>
+                  <td><span class="status-pill success">Aktiv</span></td>
+                </tr>
+                <tr>
+                  <td>TR-99881</td>
+                  <td>Ny kladde fra ordre</td>
+                  <td>Total Rent</td>
+                  <td>ukendt</td>
+                  <td><span class="status-pill warning">Kladde</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+  </html>
+
+

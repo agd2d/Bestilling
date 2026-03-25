@@ -1,0 +1,455 @@
+import {
+  CustomerAliasRecord,
+  CustomerProductPriceRecord,
+  CustomerRecord,
+  JotformAnswer,
+  JotformFieldConfig,
+  JotformSubmission,
+  JotformSyncRepository,
+  OrderRequestInsert,
+  OrderRequestLineInsert,
+  ParsedOrderInput,
+  ParsedOrderLineInput,
+  ProductRecord,
+  SyncResult,
+} from "./jotform-types";
+
+const DEFAULT_PAGE_SIZE = 100;
+const JOTFORM_BASE = "https://eu-api.jotform.com";
+
+function normalize(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function answerMatches(answer: JotformAnswer, candidates: string[]) {
+  const haystacks = [answer.name, answer.text]
+    .filter(Boolean)
+    .map((value) => normalize(value));
+
+  return candidates.some((candidate) => {
+    const needle = normalize(candidate);
+    return haystacks.some((haystack) => haystack.includes(needle));
+  });
+}
+
+function getMatchingAnswer(
+  answers: Record<string, JotformAnswer>,
+  candidates: string[]
+) {
+  return Object.values(answers).find((answer) => answerMatches(answer, candidates));
+}
+
+function extractText(answer: unknown): string | null {
+  if (typeof answer === "string") {
+    const trimmed = answer.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (answer && typeof answer === "object") {
+    const values = Object.values(answer as Record<string, unknown>)
+      .filter((value) => typeof value === "string")
+      .map((value) => String(value).trim())
+      .filter(Boolean);
+
+    return values.length > 0 ? values.join(" ") : null;
+  }
+
+  return null;
+}
+
+function extractEmail(answer: unknown): string | null {
+  const value = extractText(answer);
+  return value && value.includes("@") ? value : null;
+}
+
+function extractDate(answer: unknown): string | null {
+  if (answer && typeof answer === "object") {
+    const record = answer as Record<string, string>;
+    if (record.datetime) {
+      return record.datetime.split(" ")[0] ?? null;
+    }
+    if (record.year && record.month && record.day) {
+      return `${record.year}-${record.month.padStart(2, "0")}-${record.day.padStart(2, "0")}`;
+    }
+  }
+
+  const value = extractText(answer);
+  if (!value) return null;
+
+  const isoLike = /^\d{4}-\d{2}-\d{2}$/;
+  return isoLike.test(value) ? value : null;
+}
+
+function extractNumber(answer: unknown): number | null {
+  if (typeof answer === "number" && Number.isFinite(answer)) return answer;
+  if (typeof answer === "string") {
+    const normalized = answer.replace(/\./g, "").replace(",", ".").trim();
+    const number = Number(normalized);
+    return Number.isFinite(number) ? number : null;
+  }
+  return null;
+}
+
+function tryParseLineItemsField(answer: unknown): ParsedOrderLineInput[] {
+  if (!Array.isArray(answer)) return [];
+
+  return answer
+    .map((row, index) => {
+      if (!row || typeof row !== "object") return null;
+
+      const record = row as Record<string, unknown>;
+
+      return {
+        lineNumber: index + 1,
+        rawProductNumber: extractText(record.product_number ?? record.varenummer),
+        rawProductName: extractText(record.product_name ?? record.varenavn),
+        quantity: extractNumber(record.quantity ?? record.antal),
+        unit: extractText(record.unit ?? record.enhed),
+      };
+    })
+    .filter((row): row is ParsedOrderLineInput => row !== null);
+}
+
+function groupIndexedLineFields(
+  answers: Record<string, JotformAnswer>,
+  config: JotformFieldConfig
+) {
+  const grouped = new Map<number, Partial<ParsedOrderLineInput>>();
+
+  for (const answer of Object.values(answers)) {
+    const sourceKey = `${answer.name} ${answer.text}`;
+    const match = sourceKey.match(/(?:^|[_\s-])(\d+)(?:$|[_\s-])/);
+    if (!match) continue;
+
+    const index = Number(match[1]);
+    if (!Number.isFinite(index)) continue;
+
+    const current = grouped.get(index) ?? { lineNumber: index };
+
+    if (answerMatches(answer, config.productNumberLabels)) {
+      current.rawProductNumber = extractText(answer.answer);
+    } else if (answerMatches(answer, config.productNameLabels)) {
+      current.rawProductName = extractText(answer.answer);
+    } else if (answerMatches(answer, config.quantityLabels)) {
+      current.quantity = extractNumber(answer.answer);
+    } else if (answerMatches(answer, config.unitLabels)) {
+      current.unit = extractText(answer.answer);
+    }
+
+    grouped.set(index, current);
+  }
+
+  return Array.from(grouped.values())
+    .sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
+    .map((row, index) => ({
+      lineNumber: row.lineNumber ?? index + 1,
+      rawProductNumber: row.rawProductNumber ?? null,
+      rawProductName: row.rawProductName ?? null,
+      quantity: row.quantity ?? null,
+      unit: row.unit ?? null,
+    }))
+    .filter((row) => row.rawProductNumber || row.rawProductName || row.quantity !== null);
+}
+
+export function getDefaultJotformFieldConfig(): JotformFieldConfig {
+  return {
+    location: ["Lokation på kunden", "location_on_customer"],
+    submittedByName: ["submitted_by_name", "Navn", "bestiller"],
+    submittedByEmail: ["submitted_by_email", "email"],
+    deliveryAddress: ["delivery_address", "leveringsadresse"],
+    requestedDeliveryDate: ["requested_delivery_date", "leveringsdato"],
+    internalNote: ["note", "bemærkning", "kommentar"],
+    lineItemsFieldKeys: ["line_items", "order_lines", "varer"],
+    productNumberLabels: ["varenummer", "product_number"],
+    productNameLabels: ["varenavn", "product_name"],
+    quantityLabels: ["antal", "quantity"],
+    unitLabels: ["enhed", "unit"],
+  };
+}
+
+export function parseJotformSubmission(
+  submission: JotformSubmission,
+  config: JotformFieldConfig
+): ParsedOrderInput {
+  const locationAnswer = getMatchingAnswer(submission.answers, config.location);
+  const submittedByNameAnswer = getMatchingAnswer(
+    submission.answers,
+    config.submittedByName
+  );
+  const submittedByEmailAnswer = getMatchingAnswer(
+    submission.answers,
+    config.submittedByEmail
+  );
+  const deliveryAddressAnswer = getMatchingAnswer(
+    submission.answers,
+    config.deliveryAddress
+  );
+  const requestedDeliveryDateAnswer = getMatchingAnswer(
+    submission.answers,
+    config.requestedDeliveryDate
+  );
+  const internalNoteAnswer = getMatchingAnswer(submission.answers, config.internalNote);
+
+  let lines: ParsedOrderLineInput[] = [];
+  const directLineItemsAnswer = Object.values(submission.answers).find((answer) =>
+    answerMatches(answer, config.lineItemsFieldKeys)
+  );
+
+  if (directLineItemsAnswer) {
+    lines = tryParseLineItemsField(directLineItemsAnswer.answer);
+  }
+
+  if (lines.length === 0) {
+    lines = groupIndexedLineFields(submission.answers, config);
+  }
+
+  return {
+    submissionId: submission.id,
+    submittedAt: submission.created_at,
+    locationLabel: extractText(locationAnswer?.answer),
+    submittedByName: extractText(submittedByNameAnswer?.answer),
+    submittedByEmail: extractEmail(submittedByEmailAnswer?.answer),
+    deliveryAddress: extractText(deliveryAddressAnswer?.answer),
+    requestedDeliveryDate: extractDate(requestedDeliveryDateAnswer?.answer),
+    internalNote: extractText(internalNoteAnswer?.answer),
+    lines,
+    rawAnswers: submission.answers,
+  };
+}
+
+function buildCustomerLookup(
+  customers: CustomerRecord[],
+  aliases: CustomerAliasRecord[]
+) {
+  const lookup = new Map<string, string>();
+
+  for (const customer of customers) {
+    if (customer.name) {
+      lookup.set(normalize(customer.name), customer.id);
+    }
+  }
+
+  for (const alias of aliases) {
+    lookup.set(normalize(alias.alias_value), alias.customer_id);
+  }
+
+  return lookup;
+}
+
+function buildProductLookup(products: ProductRecord[]) {
+  return new Map(
+    products.map((product) => [normalize(product.product_number), product] as const)
+  );
+}
+
+function buildCustomerPriceLookup(rows: CustomerProductPriceRecord[]) {
+  const lookup = new Map<string, number>();
+
+  for (const row of rows) {
+    lookup.set(`${row.customer_id}:${row.product_id}`, row.price);
+  }
+
+  return lookup;
+}
+
+export async function fetchJotformSubmissions(params: {
+  apiKey: string;
+  formId: string;
+  existingIds: Set<string>;
+}) {
+  const submissions: JotformSubmission[] = [];
+  let offset = 0;
+  let skippedExisting = 0;
+
+  while (true) {
+    const url = `${JOTFORM_BASE}/form/${params.formId}/submissions?apiKey=${params.apiKey}&limit=${DEFAULT_PAGE_SIZE}&offset=${offset}&orderby=created_at&direction=DESC`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Jotform API fejl: ${response.status}`);
+    }
+
+    const json = await response.json();
+    const pageSubmissions = (json.content ?? []) as JotformSubmission[];
+
+    if (pageSubmissions.length === 0) break;
+
+    skippedExisting += pageSubmissions.filter((submission) =>
+      params.existingIds.has(submission.id)
+    ).length;
+
+    submissions.push(...pageSubmissions);
+
+    const allKnown = pageSubmissions.every((submission) =>
+      params.existingIds.has(submission.id)
+    );
+
+    if (allKnown || pageSubmissions.length < DEFAULT_PAGE_SIZE) {
+      break;
+    }
+
+    offset += DEFAULT_PAGE_SIZE;
+  }
+
+  return {
+    skippedExisting,
+    newSubmissions: submissions.filter(
+      (submission) =>
+        submission.status === "ACTIVE" && !params.existingIds.has(submission.id)
+    ),
+  };
+}
+
+export async function syncJotformOrderSubmissions(params: {
+  apiKey: string;
+  formId: string;
+  config?: JotformFieldConfig;
+  repository: JotformSyncRepository;
+}): Promise<SyncResult> {
+  const repository = params.repository;
+  const config = params.config ?? getDefaultJotformFieldConfig();
+
+  const existingIds = await repository.getImportedSubmissionIds();
+  const [customers, aliases, products] = await Promise.all([
+    repository.getCustomers(),
+    repository.getCustomerAliases("jotform"),
+    repository.getProducts(),
+  ]);
+
+  const customerLookup = buildCustomerLookup(customers, aliases);
+  const productLookup = buildProductLookup(products);
+
+  const { newSubmissions: submissions, skippedExisting } = await fetchJotformSubmissions({
+    apiKey: params.apiKey,
+    formId: params.formId,
+    existingIds,
+  });
+
+  let importedRequests = 0;
+  let importedLines = 0;
+  let actionRequiredLines = 0;
+  let failedCustomerMatches = 0;
+
+  for (const submission of submissions) {
+    const parsed = parseJotformSubmission(submission, config);
+    const locationKey = normalize(parsed.locationLabel);
+    const customerId = customerLookup.get(locationKey);
+
+    if (!parsed.locationLabel || !customerId) {
+      failedCustomerMatches += 1;
+      await repository.insertImportError({
+        source: "jotform",
+        source_submission_id: submission.id,
+        error_type: "customer_match_failed",
+        error_message: `Kunde kunne ikke matches for lokation: ${parsed.locationLabel ?? "tom værdi"}`,
+        raw_payload: submission,
+      });
+      continue;
+    }
+
+    if (parsed.lines.length === 0) {
+      await repository.insertImportError({
+        source: "jotform",
+        source_submission_id: submission.id,
+        error_type: "no_lines_found",
+        error_message: "Submissionen indeholdt ingen genkendelige varelinjer.",
+        raw_payload: submission,
+      });
+      continue;
+    }
+
+    const matchedProductIds = parsed.lines
+      .map((line) => productLookup.get(normalize(line.rawProductNumber))?.id ?? null)
+      .filter((productId): productId is string => productId !== null);
+
+    const customerPrices = buildCustomerPriceLookup(
+      await repository.getCustomerProductPrices(customerId ? [customerId] : [], matchedProductIds)
+    );
+
+    const orderRow: OrderRequestInsert = {
+      customer_id: customerId,
+      source: "jotform",
+      source_submission_id: parsed.submissionId,
+      status: "created",
+      submitted_by_name: parsed.submittedByName,
+      submitted_by_email: parsed.submittedByEmail,
+      location_label: parsed.locationLabel,
+      delivery_address: parsed.deliveryAddress,
+      requested_delivery_date: parsed.requestedDeliveryDate,
+      internal_note: parsed.internalNote,
+      imported_at: new Date().toISOString(),
+    };
+
+    const createdRequest = await repository.insertOrderRequest(orderRow);
+    importedRequests += 1;
+
+    const lineRows: OrderRequestLineInsert[] = [];
+
+    for (const line of parsed.lines) {
+      const matchedProduct = line.rawProductNumber
+        ? productLookup.get(normalize(line.rawProductNumber))
+        : undefined;
+
+      const quantity = line.quantity ?? 0;
+      const invalidQuantity = !line.quantity || line.quantity <= 0;
+      const needsAction = invalidQuantity || !matchedProduct;
+
+      const lineStatus = matchedProduct && !invalidQuantity
+        ? "ready_for_purchase"
+        : "draft_needed";
+
+      if (needsAction) actionRequiredLines += 1;
+
+      lineRows.push({
+        request_id: createdRequest.id,
+        product_id: matchedProduct?.id ?? null,
+        supplier_id: matchedProduct?.supplier_id ?? null,
+        line_number: line.lineNumber,
+        raw_product_number: line.rawProductNumber,
+        raw_product_name: line.rawProductName,
+        quantity,
+        unit: line.unit ?? matchedProduct?.unit ?? null,
+        resolved_product_number: matchedProduct?.product_number ?? null,
+        resolved_product_name: matchedProduct?.name ?? null,
+        price_for_stats: matchedProduct
+          ? customerPrices.get(`${customerId}:${matchedProduct.id}`) ?? matchedProduct.default_price ?? null
+          : null,
+        line_status: lineStatus,
+        needs_action: needsAction,
+        action_reason: invalidQuantity
+          ? "invalid_quantity"
+          : matchedProduct
+            ? null
+            : "unknown_product_number",
+        draft_product_suggestion: matchedProduct
+          ? null
+          : {
+              product_number: line.rawProductNumber,
+              product_name: line.rawProductName,
+              unit: line.unit,
+              supplier_hint: null,
+            },
+        customer_label_snapshot: parsed.locationLabel,
+      });
+    }
+
+    await repository.insertOrderRequestLines(lineRows);
+    importedLines += lineRows.length;
+  }
+
+  const result: SyncResult = {
+    success: true,
+    importedRequests,
+    importedLines,
+    actionRequiredLines,
+    skippedExisting,
+    failedCustomerMatches,
+  };
+
+  await repository.insertSyncLog({
+    source: "orders_jotform",
+    status: "success",
+    message: `Importerede ${importedRequests} ordrer og ${importedLines} linjer. ${actionRequiredLines} linjer kræver handling.`,
+  });
+
+  return result;
+}

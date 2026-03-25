@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+
+implementation/.next/
+implementation/node_modules/
+implementation/.env.local
+implementation/.vercel/
+implementation/npm-debug.log*
