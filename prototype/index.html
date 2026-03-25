@@ -179,7 +179,7 @@
               </div>
               <div class="flow-step">
                 <strong>Godkendte aliaser</strong>
-                <p>Lokationer som `Telemark` og `Tækker Administration` styres via aliaser i `customer_import_aliases`.</p>
+                <p>Lokationer som `Telemark` og `Tækker Administration` styres via aliaser i `customer_import_aliases`, når de er godkendt i mapping-filen.</p>
               </div>
               <div class="flow-step">
                 <strong>Forslag før match</strong>
@@ -187,7 +187,32 @@
               </div>
               <div class="flow-step">
                 <strong>Din styring</strong>
-                <p>Du definerer den endelige kobling i mapping-filen, og derefter importeres aliaserne ind i databasen.</p>
+                <p>Du definerer den endelige kobling i mapping-filen, og derefter importeres aliaserne ind i databasen. De første 15 Jotform-lokationer er nu godkendt som start.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel import-flow-panel">
+            <div class="panel-header">
+              <h3>Varekatalog fra Jotform</h3>
+              <span class="panel-meta">Startseed før Excel-master</span>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <strong>Første seed</strong>
+                <p>Inventory-felterne i Jotform kan nu oprette et første produktkatalog i `products`.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Varenummer som nøgle</strong>
+                <p>Hver widget læses med varenummer fra feltteksten, så linjer kan matches på samme nøgle som i formularen.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Midlertidig leverandør</strong>
+                <p>Produkter seedes foreløbigt under leverandøren `Jotform katalog`, indtil Excel-masteren overtager.</p>
+              </div>
+              <div class="flow-step">
+                <strong>Næste kvalitetstrin</strong>
+                <p>Når seedet er importeret, begynder dry-run at matche både kunder og varer i samme flow.</p>
               </div>
             </div>
           </article>

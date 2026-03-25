@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync:customer-aliases": "node scripts/apply-jotform-customer-mapping.mjs"
+    "sync:customer-aliases": "node scripts/apply-jotform-customer-mapping.mjs",
+    "sync:jotform-products": "node scripts/sync-jotform-products.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
