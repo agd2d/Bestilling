@@ -76,7 +76,7 @@ export default function OrdersOverviewTable({
                 {order.lineCount}
                 {order.actionRequiredCount > 0 && (
                   <div className="table-meta danger-text">
-                    {order.actionRequiredCount} kraever handling
+                    {order.actionRequiredCount} kræver handling
                   </div>
                 )}
               </td>
@@ -87,13 +87,17 @@ export default function OrdersOverviewTable({
                 </div>
               </td>
               <td>
-                <div className="button-row">
-                  {order.labels.map((label) => (
-                    <span className={labelClass(label)} key={`${order.id}-${label}`}>
-                      {label}
-                    </span>
-                  ))}
-                </div>
+                {order.labels.length > 0 ? (
+                  <div className="button-row">
+                    {order.labels.map((label) => (
+                      <span className={labelClass(label)} key={`${order.id}-${label}`}>
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="table-meta">Ingen labels</span>
+                )}
               </td>
             </tr>
           ))}

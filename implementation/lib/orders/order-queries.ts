@@ -187,7 +187,9 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
       supabase.from("customers").select("id, name"),
       supabase
         .from("customer_order_request_lines")
-        .select("id, request_id, raw_product_number, raw_product_name, quantity, supplier_id, line_status, needs_action"),
+        .select(
+          "id, request_id, raw_product_number, raw_product_name, quantity, supplier_id, line_status, needs_action"
+        ),
       supabase.from("suppliers").select("id, name"),
       supabase.from("order_labels").select("id, name"),
       supabase.from("request_label_links").select("request_id, label_id"),
@@ -241,11 +243,12 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
 export async function getOrderByIdData(id: string) {
   const result = await getOrdersListData();
   const order = result.orders.find((item) => item.id === id) ?? null;
-  const notes = result.source === "live"
-    ? result.notes
-    : result.notes.filter((note) =>
-        mockOrderNotes.some((mock) => mock.requestId === id && mock.id === note.id)
-      );
+  const notes =
+    result.source === "live"
+      ? result.notes
+      : result.notes.filter((note) =>
+          mockOrderNotes.some((mock) => mock.requestId === id && mock.id === note.id)
+        );
 
   return {
     ...result,
