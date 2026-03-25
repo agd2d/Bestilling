@@ -1,0 +1,17 @@
+{
+  "name": "bestillingsystem",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "workspaces": [
+    "implementation"
+  ],
+  "scripts": {
+    "dev": "npm --prefix implementation run dev",
+    "build": "npm --prefix implementation run build",
+    "vercel-build": "npm --prefix implementation run build",
+    "start": "npm --prefix implementation run start",
+    "lint": "npm --prefix implementation run lint"
+  }
+}
