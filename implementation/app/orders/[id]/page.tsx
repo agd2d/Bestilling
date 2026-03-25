@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import OrderLabelsPanel from "@/components/OrderLabelsPanel";
+import OrderLinesEditor from "@/components/OrderLinesEditor";
 import OrderNotesPanel from "@/components/OrderNotesPanel";
 import OrderStatusSelect from "@/components/OrderStatusSelect";
 import { getLabelTone } from "@/lib/orders/order-labels";
@@ -26,7 +27,8 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { order, source, message, notes, availableLabels } = await getOrderByIdData(id);
+  const { order, source, message, notes, availableLabels, availableProducts, availableSuppliers } =
+    await getOrderByIdData(id);
 
   if (!order) notFound();
 
@@ -58,45 +60,11 @@ export default async function OrderDetailPage({
       </section>
 
       <section className="panel-stack">
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <p className="kicker">Linjer</p>
-              <h2>Ordrelinjer</h2>
-            </div>
-            <span className="pill neutral">{order.lines.length} linjer</span>
-          </div>
-
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Varenr.</th>
-                <th>Navn</th>
-                <th>Antal</th>
-                <th>Leverandør</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.lines.map((line) => (
-                <tr key={line.id}>
-                  <td>{line.productNumber}</td>
-                  <td>
-                    {line.productName}
-                    {line.needsAction && (
-                      <div className="table-meta danger-text">Foreslå ny varekladde</div>
-                    )}
-                  </td>
-                  <td>{line.quantity}</td>
-                  <td>{line.supplier}</td>
-                  <td>
-                    <span className={pillClass(line.status)}>{line.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <OrderLinesEditor
+          lines={order.lines}
+          products={availableProducts}
+          suppliers={availableSuppliers}
+        />
 
         <div className="two-grid">
           <OrderLabelsPanel

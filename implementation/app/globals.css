@@ -314,6 +314,46 @@ a {
   font-size: 0.85rem;
 }
 
+.line-editor {
+  display: grid;
+  gap: 14px;
+  padding: 12px 4px 4px;
+}
+
+.line-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.editor-field {
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+  color: #5e665d;
+}
+
+.editor-field-wide {
+  grid-column: span 2;
+}
+
+.editor-input {
+  width: 100%;
+  border: 1px solid #d7cfbf;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fffdf8;
+  font: inherit;
+}
+
+.line-editor-note {
+  grid-column: span 2;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f4f1e7;
+  color: #5e665d;
+}
+
 .two-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -475,7 +515,8 @@ a {
 
   .orders-dashboard-grid,
   .two-grid,
-  .stats-grid {
+  .stats-grid,
+  .line-editor-grid {
     grid-template-columns: 1fr;
   }
 

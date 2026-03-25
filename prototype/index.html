@@ -379,6 +379,7 @@
                     <th>Antal</th>
                     <th>LeverandÃ¸r</th>
                     <th>Status</th>
+                    <th>Handling</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -388,6 +389,7 @@
                     <td>8</td>
                     <td>Total Rent</td>
                     <td><span class="status-pill success">Klar til bestilling</span></td>
+                    <td><button class="action-button">Rediger varelinje</button></td>
                   </tr>
                   <tr class="highlight-row">
                     <td>TR-99881</td>
@@ -395,6 +397,21 @@
                     <td>2</td>
                     <td>Ukendt</td>
                     <td><span class="status-pill danger">Kladde nÃ¸dvendig</span></td>
+                    <td><button class="action-button">Rediger varelinje</button></td>
+                  </tr>
+                  <tr>
+                    <td colspan="6">
+                      <div class="import-summary-card">
+                        <span class="summary-label">Redigering af varelinje</span>
+                        <strong>Tre gemte valg på hver linje</strong>
+                        <p>1. Opret ny vare i databasen. 2. Vælg en vare fra den eksisterende liste. 3. Slet eller ignorer linjen. Når en vare bliver valgt eller oprettet, bliver linjen klar til bestilling.</p>
+                        <div class="label-row">
+                          <span class="mini-label green">vælg vare fra listen</span>
+                          <span class="mini-label info">opret ny vare</span>
+                          <span class="mini-label amber">ignorer linje</span>
+                        </div>
+                      </div>
+                    </td>
                   </tr>
                   <tr>
                     <td>TR-44210</td>
@@ -402,6 +419,7 @@
                     <td>12</td>
                     <td>Total Rent</td>
                     <td><span class="status-pill success">Klar til bestilling</span></td>
+                    <td><button class="action-button">Rediger varelinje</button></td>
                   </tr>
                   <tr>
                     <td>AB-2811</td>
@@ -409,6 +427,7 @@
                     <td>5</td>
                     <td>Abena</td>
                     <td><span class="status-pill success">Klar til bestilling</span></td>
+                    <td><button class="action-button">Rediger varelinje</button></td>
                   </tr>
                 </tbody>
               </table>
@@ -543,6 +562,13 @@
                 <div>
                   <strong>Labels</strong>
                   <p>Du kan nu tilføje og fjerne faste ordrelabels direkte på ordredetaljen.</p>
+                </div>
+                <span class="status-pill success">Ny</span>
+              </div>
+              <div class="list-item">
+                <div>
+                  <strong>Varelinje-redigering</strong>
+                  <p>Alle ordrelinjer kan nu redigeres med valg mellem ny vare, eksisterende vare eller ignorering.</p>
                 </div>
                 <span class="status-pill success">Ny</span>
               </div>

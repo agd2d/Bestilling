@@ -1,6 +1,14 @@
 import { hasEnv } from "@/lib/env";
 import { defaultOrderLabels, OrderLabelOption } from "@/lib/orders/order-labels";
-import { mockOrders, MockOrder, MockOrderLine } from "@/lib/orders/mock-orders";
+import {
+  mockOrders,
+  mockProducts,
+  mockSuppliers,
+  MockOrder,
+  MockOrderLine,
+  ProductOption,
+  SupplierOption,
+} from "@/lib/orders/mock-orders";
 import { mockOrderNotes } from "@/lib/orders/mock-notes";
 import { OrderNoteItem } from "@/lib/orders/order-notes-actions";
 import { formatOrderStatus } from "@/lib/orders/status-options";
@@ -23,10 +31,14 @@ interface CustomerRow {
 interface RequestLineRow {
   id: string;
   request_id: string;
+  product_id: string | null;
   raw_product_number: string | null;
   raw_product_name: string | null;
   quantity: number;
   supplier_id: string | null;
+  unit: string | null;
+  resolved_product_number: string | null;
+  resolved_product_name: string | null;
   line_status: string;
   needs_action: boolean;
 }
@@ -34,6 +46,14 @@ interface RequestLineRow {
 interface SupplierRow {
   id: string;
   name: string;
+}
+
+interface ProductRow {
+  id: string;
+  product_number: string;
+  name: string;
+  supplier_id: string | null;
+  unit: string | null;
 }
 
 interface LabelRow {
@@ -59,6 +79,8 @@ export interface OrdersDataResult {
   orders: MockOrder[];
   notes: OrderNoteItem[];
   availableLabels: OrderLabelOption[];
+  availableProducts: ProductOption[];
+  availableSuppliers: SupplierOption[];
   source: "live" | "mock";
   message?: string;
 }
@@ -93,10 +115,14 @@ function formatDate(value: string) {
 function mapLiveLine(line: RequestLineRow, suppliers: Map<string, string>): MockOrderLine {
   return {
     id: line.id,
-    productNumber: line.raw_product_number ?? "-",
-    productName: line.raw_product_name ?? "Ukendt vare",
+    productId: line.product_id,
+    supplierId: line.supplier_id,
+    productNumber: line.resolved_product_number ?? line.raw_product_number ?? "-",
+    productName: line.resolved_product_name ?? line.raw_product_name ?? "Ukendt vare",
     quantity: line.quantity,
     supplier: line.supplier_id ? suppliers.get(line.supplier_id) ?? "Ukendt" : "Ukendt",
+    unit: line.unit,
+    rawStatus: line.line_status,
     status: formatLineStatus(line.line_status),
     needsAction: line.needs_action,
   };
@@ -154,6 +180,21 @@ function buildLiveNotes(rows: OrderNoteRow[]): OrderNoteItem[] {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+function buildProductOptions(products: ProductRow[], suppliers: SupplierRow[]): ProductOption[] {
+  const supplierMap = new Map(suppliers.map((supplier) => [supplier.id, supplier.name]));
+
+  return products.map((product) => ({
+    id: product.id,
+    productNumber: product.product_number,
+    name: product.name,
+    supplierId: product.supplier_id,
+    supplierName: product.supplier_id
+      ? supplierMap.get(product.supplier_id) ?? "Ukendt leverandør"
+      : "Ukendt leverandør",
+    unit: product.unit,
+  }));
+}
+
 function getMockNotes(): OrderNoteItem[] {
   return mockOrderNotes.map((note) => ({
     id: note.id,
@@ -170,6 +211,8 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
       orders: mockOrders,
       notes: getMockNotes(),
       availableLabels: defaultOrderLabels,
+      availableProducts: mockProducts,
+      availableSuppliers: mockSuppliers,
       source: "mock",
       message: "Miljøvariabler mangler stadig, derfor vises mockdata.",
     };
@@ -182,6 +225,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
       { data: customers, error: customersError },
       { data: lines, error: linesError },
       { data: suppliers, error: suppliersError },
+      { data: products, error: productsError },
       { data: labels, error: labelsError },
       { data: requestLabels, error: requestLabelsError },
       { data: notes, error: notesError },
@@ -194,9 +238,10 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
       supabase
         .from("customer_order_request_lines")
         .select(
-          "id, request_id, raw_product_number, raw_product_name, quantity, supplier_id, line_status, needs_action"
+          "id, request_id, product_id, raw_product_number, raw_product_name, quantity, supplier_id, unit, resolved_product_number, resolved_product_name, line_status, needs_action"
         ),
       supabase.from("suppliers").select("id, name"),
+      supabase.from("products").select("id, product_number, name, supplier_id, unit").order("product_number"),
       supabase.from("order_labels").select("id, name, color"),
       supabase.from("request_label_links").select("request_id, label_id"),
       supabase.from("order_notes").select("id, request_id, note, created_at, author_user_id"),
@@ -207,6 +252,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
       customersError ||
       linesError ||
       suppliersError ||
+      productsError ||
       labelsError ||
       requestLabelsError ||
       notesError;
@@ -216,17 +262,21 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
         orders: mockOrders,
         notes: getMockNotes(),
         availableLabels: defaultOrderLabels,
+        availableProducts: mockProducts,
+        availableSuppliers: mockSuppliers,
         source: "mock",
         message: `Live læsning fejlede: ${firstError.message}. Mockdata vises i stedet.`,
       };
     }
+
+    const supplierRows = (suppliers ?? []) as SupplierRow[];
 
     return {
       orders: buildLiveOrders({
         requests: (requests ?? []) as OrderRequestRow[],
         customers: (customers ?? []) as CustomerRow[],
         lines: (lines ?? []) as RequestLineRow[],
-        suppliers: (suppliers ?? []) as SupplierRow[],
+        suppliers: supplierRows,
         labels: (labels ?? []) as LabelRow[],
         requestLabels: (requestLabels ?? []) as RequestLabelRow[],
       }),
@@ -236,6 +286,11 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
         name: label.name,
         color: label.color,
       })),
+      availableProducts: buildProductOptions((products ?? []) as ProductRow[], supplierRows),
+      availableSuppliers: supplierRows.map((supplier) => ({
+        id: supplier.id,
+        name: supplier.name,
+      })),
       source: "live",
       message: "Data hentes nu fra Supabase.",
     };
@@ -244,6 +299,8 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
       orders: mockOrders,
       notes: getMockNotes(),
       availableLabels: defaultOrderLabels,
+      availableProducts: mockProducts,
+      availableSuppliers: mockSuppliers,
       source: "mock",
       message:
         error instanceof Error
