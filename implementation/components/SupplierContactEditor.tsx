@@ -19,6 +19,7 @@ export default function SupplierContactEditor({
 }) {
   const router = useRouter();
   const [form, setForm] = useState({
+    name: supplier.name,
     email: supplier.email ?? '',
     orderEmail: supplier.orderEmail ?? '',
     confirmationEmail: supplier.confirmationEmail ?? '',
@@ -56,6 +57,14 @@ export default function SupplierContactEditor({
   return (
     <div className="line-editor">
       <div className="line-editor-grid">
+        <label className="editor-field editor-field-wide">
+          Leverandørnavn
+          <input
+            className="editor-input"
+            value={form.name}
+            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+          />
+        </label>
         <label className="editor-field">
           Generel e-mail
           <input

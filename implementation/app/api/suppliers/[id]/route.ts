@@ -26,6 +26,7 @@ export async function POST(
 
     const { id } = await context.params;
     const body = (await request.json()) as {
+      name?: string;
       email?: string;
       orderEmail?: string;
       confirmationEmail?: string;
@@ -36,6 +37,7 @@ export async function POST(
 
     const result = await updateSupplierContacts({
       id,
+      name: body.name?.trim() ?? "",
       email: body.email?.trim() || null,
       orderEmail: body.orderEmail?.trim() || null,
       confirmationEmail: body.confirmationEmail?.trim() || null,

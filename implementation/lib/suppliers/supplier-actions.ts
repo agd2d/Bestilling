@@ -13,6 +13,7 @@ function canUseLiveData() {
 
 export async function updateSupplierContacts(params: {
   id: string;
+  name: string;
   email: string | null;
   orderEmail: string | null;
   confirmationEmail: string | null;
@@ -25,6 +26,14 @@ export async function updateSupplierContacts(params: {
       success: false,
       source: "mock",
       message: "Leverandør-id mangler.",
+    };
+  }
+
+  if (!params.name.trim()) {
+    return {
+      success: false,
+      source: "mock",
+      message: "Leverandørnavn må ikke være tomt.",
     };
   }
 
@@ -41,6 +50,7 @@ export async function updateSupplierContacts(params: {
     const { error } = await supabase
       .from("suppliers")
       .update({
+        name: params.name.trim(),
         email: params.email,
         order_email: params.orderEmail,
         confirmation_email: params.confirmationEmail,
