@@ -52,6 +52,37 @@ export interface SavedPurchaseOrdersResult {
   message?: string;
 }
 
+export interface PurchaseOrderDetailLine {
+  id: string;
+  customerName: string;
+  locationLabel: string;
+  productNumber: string;
+  productName: string;
+  quantity: number;
+  unit: string | null;
+  lineStatus: string;
+}
+
+export interface PurchaseOrderDetailResult {
+  purchaseOrder: {
+    id: string;
+    supplierName: string;
+    supplierEmail: string | null;
+    status: string;
+    statusLabel: string;
+    statusTone: string;
+    createdAt: string;
+    sentAt: string | null;
+    emailSubject: string | null;
+    emailBody: string | null;
+    lineCount: number;
+    customerCount: number;
+  } | null;
+  lines: PurchaseOrderDetailLine[];
+  source: "live" | "mock";
+  message?: string;
+}
+
 interface RequestLineRow {
   id: string;
   request_id: string;
@@ -88,14 +119,28 @@ interface PurchaseOrderRow {
   supplier_id: string;
   status: string;
   email_subject: string | null;
+  email_body: string | null;
   created_at: string;
   sent_at: string | null;
 }
 
 interface PurchaseOrderLineRow {
+  id: string;
   purchase_order_id: string;
   request_line_id: string;
   customer_id: string;
+  quantity: number;
+  unit: string | null;
+  line_status: string;
+}
+
+interface PurchaseOrderRequestLineRow {
+  id: string;
+  request_id: string;
+  raw_product_number: string | null;
+  raw_product_name: string | null;
+  resolved_product_number: string | null;
+  resolved_product_name: string | null;
 }
 
 const mockDrafts: PurchaseDraftGroup[] = [
@@ -167,6 +212,60 @@ const mockSavedPurchaseOrders: SavedPurchaseOrderCard[] = [
     emailSubject: "Bestilling fra Hvidbjerg Service - Abena",
   },
 ];
+
+const mockPurchaseOrderDetails: Record<
+  string,
+  { purchaseOrder: PurchaseOrderDetailResult["purchaseOrder"]; lines: PurchaseOrderDetailLine[] }
+> = {
+  "po-mock-1": {
+    purchaseOrder: {
+      id: "po-mock-1",
+      supplierName: "Total Rent",
+      supplierEmail: "kundeservice@totalrent.dk",
+      status: "ready_to_send",
+      statusLabel: formatPurchaseOrderStatus("ready_to_send"),
+      statusTone: purchaseOrderStatusTone("ready_to_send"),
+      createdAt: "2026-03-26T08:30:00.000Z",
+      sentAt: "2026-03-26T08:35:00.000Z",
+      emailSubject: "Bestilling fra Hvidbjerg Service - Total Rent",
+      emailBody: "Eksempel på samlet mailtekst til leverandøren.",
+      lineCount: 3,
+      customerCount: 2,
+    },
+    lines: [
+      {
+        id: "pol-mock-1",
+        customerName: "Plejecenter Solhøj",
+        locationLabel: "Lokation på kunden - Plejecenter Solhøj",
+        productNumber: "TR-10234",
+        productName: "Affaldssække 100L",
+        quantity: 8,
+        unit: "rulle",
+        lineStatus: "sent",
+      },
+      {
+        id: "pol-mock-2",
+        customerName: "Plejecenter Solhøj",
+        locationLabel: "Lokation på kunden - Plejecenter Solhøj",
+        productNumber: "TR-44210",
+        productName: "Toiletpapir premium",
+        quantity: 12,
+        unit: "pakke",
+        lineStatus: "sent",
+      },
+      {
+        id: "pol-mock-3",
+        customerName: "Børnehuset Egebo",
+        locationLabel: "Lokation på kunden - Børnehuset Egebo",
+        productNumber: "TR-21100",
+        productName: "Universalrengøring",
+        quantity: 3,
+        unit: "dunk",
+        lineStatus: "sent",
+      },
+    ],
+  },
+};
 
 function canUseLiveData() {
   return hasEnv("NEXT_PUBLIC_SUPABASE_URL") && hasEnv("SUPABASE_SERVICE_ROLE_KEY");
@@ -329,7 +428,7 @@ export async function getSavedPurchaseOrdersData(params?: {
     const supabase = createAdminClient();
     let purchaseOrdersQuery = supabase
       .from("purchase_orders")
-      .select("id, supplier_id, status, email_subject, created_at, sent_at")
+      .select("id, supplier_id, status, email_subject, email_body, created_at, sent_at")
       .order("created_at", { ascending: false });
 
     if (params?.status) {
@@ -343,7 +442,7 @@ export async function getSavedPurchaseOrdersData(params?: {
       { data: customers, error: customersError },
     ] = await Promise.all([
       purchaseOrdersQuery,
-      supabase.from("purchase_order_lines").select("purchase_order_id, request_line_id, customer_id"),
+      supabase.from("purchase_order_lines").select("id, purchase_order_id, request_line_id, customer_id, quantity, unit, line_status"),
       supabase.from("suppliers").select("id, name, order_email, email"),
       supabase.from("customers").select("id, name"),
     ]);
@@ -403,6 +502,170 @@ export async function getSavedPurchaseOrdersData(params?: {
         error instanceof Error
           ? `Live læsning fejlede: ${error.message}. Mockdata vises i stedet.`
           : "Live læsning fejlede. Mockdata vises i stedet.",
+    };
+  }
+}
+
+export async function getPurchaseOrderDetailData(
+  purchaseOrderId: string
+): Promise<PurchaseOrderDetailResult> {
+  if (!canUseLiveData()) {
+    const mockDetail = mockPurchaseOrderDetails[purchaseOrderId] ?? null;
+
+    return {
+      purchaseOrder: mockDetail?.purchaseOrder ?? null,
+      lines: mockDetail?.lines ?? [],
+      source: "mock",
+      message: mockDetail
+        ? "Mockdetaljer vises, fordi live data ikke er tilgængelige."
+        : "Leverandørordren blev ikke fundet i mockdata.",
+    };
+  }
+
+  try {
+    const supabase = createAdminClient();
+    const { data: purchaseOrder, error: purchaseOrderError } = await supabase
+      .from("purchase_orders")
+      .select("id, supplier_id, status, email_subject, email_body, created_at, sent_at")
+      .eq("id", purchaseOrderId)
+      .maybeSingle();
+
+    if (purchaseOrderError) {
+      return {
+        purchaseOrder: null,
+        lines: [],
+        source: "mock",
+        message: `Live læsning fejlede: ${purchaseOrderError.message}.`,
+      };
+    }
+
+    if (!purchaseOrder) {
+      return {
+        purchaseOrder: null,
+        lines: [],
+        source: "live",
+        message: "Leverandørordren blev ikke fundet.",
+      };
+    }
+
+    const [
+      { data: purchaseOrderLines, error: purchaseOrderLinesError },
+      { data: suppliers, error: suppliersError },
+      { data: customers, error: customersError },
+    ] = await Promise.all([
+      supabase
+        .from("purchase_order_lines")
+        .select("id, purchase_order_id, request_line_id, customer_id, quantity, unit, line_status")
+        .eq("purchase_order_id", purchaseOrderId),
+      supabase.from("suppliers").select("id, name, order_email, email"),
+      supabase.from("customers").select("id, name"),
+    ]);
+
+    const firstError = purchaseOrderLinesError || suppliersError || customersError;
+
+    if (firstError) {
+      return {
+        purchaseOrder: null,
+        lines: [],
+        source: "mock",
+        message: `Live læsning fejlede: ${firstError.message}.`,
+      };
+    }
+
+    const requestLineIds = ((purchaseOrderLines ?? []) as PurchaseOrderLineRow[]).map(
+      (line) => line.request_line_id
+    );
+
+    const { data: requestLines, error: requestLinesError } = await supabase
+      .from("customer_order_request_lines")
+      .select(
+        "id, request_id, raw_product_number, raw_product_name, resolved_product_number, resolved_product_name"
+      )
+      .in("id", requestLineIds);
+
+    if (requestLinesError) {
+      return {
+        purchaseOrder: null,
+        lines: [],
+        source: "mock",
+        message: `Live læsning fejlede: ${requestLinesError.message}.`,
+      };
+    }
+
+    const requestIds = Array.from(
+      new Set(((requestLines ?? []) as PurchaseOrderRequestLineRow[]).map((line) => line.request_id))
+    );
+
+    const { data: requests, error: requestsError } = await supabase
+      .from("customer_order_requests")
+      .select("id, customer_id, location_label")
+      .in("id", requestIds);
+
+    if (requestsError) {
+      return {
+        purchaseOrder: null,
+        lines: [],
+        source: "mock",
+        message: `Live læsning fejlede: ${requestsError.message}.`,
+      };
+    }
+
+    const requestLineMap = new Map(
+      ((requestLines ?? []) as PurchaseOrderRequestLineRow[]).map((line) => [line.id, line])
+    );
+    const requestMap = new Map((requests ?? []).map((request) => [request.id, request as RequestRow]));
+    const supplierMap = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier as SupplierRow]));
+    const customerMap = new Map((customers ?? []).map((customer) => [customer.id, customer as CustomerRow]));
+
+    const detailLines = ((purchaseOrderLines ?? []) as PurchaseOrderLineRow[]).map((line) => {
+      const requestLine = requestLineMap.get(line.request_line_id);
+      const request = requestLine ? requestMap.get(requestLine.request_id) : null;
+      const customer = customerMap.get(line.customer_id);
+
+      return {
+        id: line.id,
+        customerName: customer?.name ?? "Ukendt kunde",
+        locationLabel: request?.location_label ?? "Ukendt lokation",
+        productNumber:
+          requestLine?.resolved_product_number ?? requestLine?.raw_product_number ?? "-",
+        productName: requestLine?.resolved_product_name ?? requestLine?.raw_product_name ?? "Ukendt vare",
+        quantity: Number(line.quantity ?? 0),
+        unit: line.unit ?? null,
+        lineStatus: line.line_status ?? "draft",
+      };
+    });
+
+    const uniqueCustomerCount = new Set(detailLines.map((line) => line.customerName)).size;
+    const supplier = supplierMap.get((purchaseOrder as PurchaseOrderRow).supplier_id);
+
+    return {
+      purchaseOrder: {
+        id: (purchaseOrder as PurchaseOrderRow).id,
+        supplierName: supplier?.name ?? "Ukendt leverandør",
+        supplierEmail: supplier?.order_email ?? supplier?.email ?? null,
+        status: (purchaseOrder as PurchaseOrderRow).status,
+        statusLabel: formatPurchaseOrderStatus((purchaseOrder as PurchaseOrderRow).status),
+        statusTone: purchaseOrderStatusTone((purchaseOrder as PurchaseOrderRow).status),
+        createdAt: (purchaseOrder as PurchaseOrderRow).created_at,
+        sentAt: (purchaseOrder as PurchaseOrderRow).sent_at,
+        emailSubject: (purchaseOrder as PurchaseOrderRow).email_subject,
+        emailBody: (purchaseOrder as PurchaseOrderRow).email_body,
+        lineCount: detailLines.length,
+        customerCount: uniqueCustomerCount,
+      },
+      lines: detailLines,
+      source: "live",
+      message: "Leverandørordren er hentet fra databasen.",
+    };
+  } catch (error) {
+    return {
+      purchaseOrder: null,
+      lines: [],
+      source: "mock",
+      message:
+        error instanceof Error
+          ? `Live læsning fejlede: ${error.message}.`
+          : "Live læsning fejlede.",
     };
   }
 }

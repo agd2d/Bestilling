@@ -2,7 +2,9 @@ const titleMap = {
   overview: "Overblik",
   requests: "Kundebestillinger",
   "request-detail": "Ordredetalje",
+  "impl-orders": "Implementation ordrevisning",
   "purchase-orders": "Leverandørordre",
+  "purchase-order-detail": "Leverandørordre detalje",
   "customer-invoicing": "Fakturering til kunde",
   inbox: "Mailindbakke",
   products: "Varekatalog",
@@ -12,6 +14,7 @@ const navLinks = document.querySelectorAll(".nav-link");
 const views = document.querySelectorAll(".view");
 const title = document.getElementById("view-title");
 const detailTriggers = document.querySelectorAll(".goto-detail");
+const purchaseOrderDetailTriggers = document.querySelectorAll(".goto-purchase-order-detail");
 
 function showView(viewName) {
   navLinks.forEach((button) => {
@@ -34,5 +37,11 @@ navLinks.forEach((button) => {
 detailTriggers.forEach((trigger) => {
   trigger.addEventListener("click", () => {
     showView("request-detail");
+  });
+});
+
+purchaseOrderDetailTriggers.forEach((trigger) => {
+  trigger.addEventListener("click", () => {
+    showView("purchase-order-detail");
   });
 });

@@ -116,7 +116,11 @@ export default async function PurchaseOrdersPage() {
                   <div className="card-header">
                     <div>
                       <p className="kicker">Leverandør</p>
-                      <h3>{purchaseOrder.supplierName}</h3>
+                      <h3>
+                        <Link className="table-link" href={`/purchase-orders/${purchaseOrder.id}`}>
+                          {purchaseOrder.supplierName}
+                        </Link>
+                      </h3>
                       <p className="muted">
                         {purchaseOrder.customerCount} kunder · {purchaseOrder.lineCount} linjer
                       </p>
@@ -138,6 +142,11 @@ export default async function PurchaseOrdersPage() {
                       {purchaseOrder.emailSubject ? (
                         <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p>
                       ) : null}
+                      <p className="table-meta">
+                        <Link className="table-link" href={`/purchase-orders/${purchaseOrder.id}`}>
+                          Åbn leverandørordre
+                        </Link>
+                      </p>
                     </div>
                     <PurchaseOrderStatusSelect
                       purchaseOrderId={purchaseOrder.id}

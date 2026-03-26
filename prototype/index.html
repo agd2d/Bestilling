@@ -614,21 +614,21 @@
                     <strong>Total Rent · PO-2026-031</strong>
                     <p>27 linjer fra 9 kunder · afsendt 26/03 08:35</p>
                   </div>
-                  <span class="status-pill info">Afsendt ordre</span>
+                  <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
                 </div>
                 <div class="list-item">
                   <div>
                     <strong>Abena · PO-2026-029</strong>
                     <p>9 linjer fra 3 kunder · afventer ordrebekræftelse</p>
                   </div>
-                  <span class="status-pill warning">Afventer bekræftelse</span>
+                  <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
                 </div>
                 <div class="list-item">
                   <div>
                     <strong>MultiLine · PO-2026-028</strong>
                     <p>4 linjer fra 2 kunder · modtaget ved kunden</p>
                   </div>
-                  <span class="status-pill success">Ordre modtaget ved kunden</span>
+                  <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
                 </div>
               </div>
             </article>
@@ -706,7 +706,97 @@
                   <strong>Abena · PO-2026-027</strong>
                   <p>6 linjer fra 2 kunder · sendt videre til fakturering</p>
                 </div>
-                <span class="status-pill neutral">Klar til fakturering</span>
+                <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="view-purchase-order-detail">
+          <article class="panel">
+            <div class="detail-header">
+              <div>
+                <p class="eyebrow">Leverandørordre</p>
+                <h3>Total Rent · PO-2026-031</h3>
+                <p class="detail-meta">Oprettet 26. marts 2026 08:30 · Afsendt 26. marts 2026 08:35</p>
+              </div>
+              <span class="status-pill info large">Afsendt ordre</span>
+            </div>
+
+            <div class="summary-grid">
+              <div>
+                <span class="summary-label">Leverandør</span>
+                <strong>Total Rent</strong>
+              </div>
+              <div>
+                <span class="summary-label">E-mail</span>
+                <strong>kundeservice@totalrent.dk</strong>
+              </div>
+              <div>
+                <span class="summary-label">Kunder</span>
+                <strong>9</strong>
+              </div>
+              <div>
+                <span class="summary-label">Linjer</span>
+                <strong>27</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Samlede linjer</h3>
+              <span class="panel-meta">Klikbar detailvisning</span>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Kunde</th>
+                  <th>Lokation</th>
+                  <th>Varenr.</th>
+                  <th>Varenavn</th>
+                  <th>Antal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Plejecenter Solhøj</td>
+                  <td>Lokation på kunden - Plejecenter Solhøj</td>
+                  <td>TR-10234</td>
+                  <td>Affaldssække 100L</td>
+                  <td>8 rulle</td>
+                </tr>
+                <tr>
+                  <td>Plejecenter Solhøj</td>
+                  <td>Lokation på kunden - Plejecenter Solhøj</td>
+                  <td>TR-44210</td>
+                  <td>Toiletpapir premium</td>
+                  <td>12 pakke</td>
+                </tr>
+                <tr>
+                  <td>Børnehuset Egebo</td>
+                  <td>Lokation på kunden - Børnehuset Egebo</td>
+                  <td>TR-21100</td>
+                  <td>Universalrengøring</td>
+                  <td>3 dunk</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Mailgrundlag</h3>
+              <span class="panel-meta">Til Outlook</span>
+            </div>
+            <div class="action-list">
+              <div class="action-block">
+                <strong>Emne</strong>
+                <p>Bestilling fra Hvidbjerg Service - Total Rent</p>
+              </div>
+              <div class="action-block">
+                <strong>Mailtekst</strong>
+                <p>Leverandørordren gemmer nu også den tekst, der blev sendt eller skal sendes til leverandøren.</p>
               </div>
             </div>
           </article>
