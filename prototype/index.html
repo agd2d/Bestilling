@@ -579,23 +579,39 @@
         <section class="view" id="view-purchase-orders">
           <article class="panel">
             <div class="panel-header">
-              <h3>Samlede leverandÃ¸rbestillinger</h3>
+              <h3>Samlede leverandørbestillinger</h3>
               <span class="panel-meta">Ugens kladder</span>
             </div>
             <div class="list">
               <div class="list-item">
                 <div>
-                  <strong>Total Rent Â· kladde</strong>
-                  <p>27 linjer fra 9 kunder Â· mailtekst klar til kopi</p>
+                  <strong>Total Rent · kladde</strong>
+                  <p>27 linjer fra 9 kunder · mailtekst klar til kopi</p>
                 </div>
                 <span class="status-pill success">Klar til afsendelse</span>
               </div>
               <div class="list-item">
                 <div>
-                  <strong>Abena Â· kladde</strong>
+                  <strong>Abena · kladde</strong>
                   <p>9 linjer fra 3 kunder</p>
                 </div>
                 <span class="status-pill neutral">Udkast</span>
+              </div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Mailkladde</h3>
+              <span class="panel-meta">Ny side i implementationen</span>
+            </div>
+            <div class="action-list">
+              <div class="action-block">
+                <strong>Automatisk gruppering</strong>
+                <p>Linjer med status klar til bestilling samles nu pr. leverandør og udelader linjer, der allerede er med i en purchase order.</p>
+              </div>
+              <div class="action-block">
+                <strong>Færdig tekst</strong>
+                <p>Systemet bygger nu både emnelinje og mailkrop, så varebestilleren kan kopiere dem direkte til Outlook.</p>
               </div>
             </div>
           </article>

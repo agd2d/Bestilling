@@ -3,6 +3,7 @@ import Link from "next/link";
 const navItems = [
   { href: "/", label: "Overblik" },
   { href: "/orders", label: "Varebestilling" },
+  { href: "/purchase-orders", label: "Leverandørkladder" },
 ];
 
 export default function AppHeader() {

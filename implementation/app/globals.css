@@ -118,6 +118,10 @@ a {
   padding: 18px;
 }
 
+.nested-card {
+  background: #fbfaf5;
+}
+
 .card strong {
   display: block;
   margin-bottom: 8px;
@@ -501,6 +505,20 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: #6b6f68;
+}
+
+.mail-draft-box {
+  margin: 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: #fffefb;
+  border: 1px solid #ece7dd;
+  color: #39413c;
+}
+
+.mail-draft-box.multiline {
+  white-space: pre-wrap;
+  min-height: 220px;
 }
 
 @media (max-width: 720px) {
