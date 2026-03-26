@@ -48,6 +48,12 @@ export default function OrderFlowButton({
 
     setMessage(data.message ?? 'Flow opdateret');
     startTransition(() => {
+      if (sendToOrder) {
+        router.refresh();
+        return;
+      }
+
+      router.push('/purchase-orders');
       router.refresh();
     });
   }
