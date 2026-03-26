@@ -2,7 +2,8 @@ const titleMap = {
   overview: "Overblik",
   requests: "Kundebestillinger",
   "request-detail": "Ordredetalje",
-  "purchase-orders": "Leverandørbestillinger",
+  "purchase-orders": "Leverandørordre",
+  "customer-invoicing": "Fakturering til kunde",
   inbox: "Mailindbakke",
   products: "Varekatalog",
 };

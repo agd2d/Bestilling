@@ -20,7 +20,8 @@
           <button class="nav-link" data-view="requests">Kundebestillinger</button>
           <button class="nav-link" data-view="request-detail">Ordredetalje</button>
           <button class="nav-link" data-view="impl-orders">Implementation ordrevisning</button>
-          <button class="nav-link" data-view="purchase-orders">Leverandørbestillinger</button>
+          <button class="nav-link" data-view="purchase-orders">Leverandørordre</button>
+          <button class="nav-link" data-view="customer-invoicing">Fakturering til kunde</button>
           <button class="nav-link" data-view="inbox">Mailindbakke</button>
           <button class="nav-link" data-view="products">Varekatalog</button>
         </nav>
@@ -577,14 +578,39 @@
         </section>
 
         <section class="view" id="view-purchase-orders">
-          <article class="panel">
-            <div class="panel-header">
-              <h3>Samlede leverandørbestillinger</h3>
-              <span class="panel-meta">Ugens kladder</span>
-            </div>
-            <div class="list">
-              <div class="list-item">
-                <div>
+            <article class="panel">
+              <div class="panel-header">
+                <h3>Leverandørordre-flow</h3>
+                <span class="panel-meta">Ugens kladder</span>
+              </div>
+              <div class="flow-steps">
+                <div class="flow-step">
+                  <strong>1. Afsendt ordre</strong>
+                  <p>Ordren er sendt til leverandøren.</p>
+                </div>
+                <div class="flow-step">
+                  <strong>2. Afventer bekræftelse fra leverandør</strong>
+                  <p>Vi afventer ordrebekræftelse eller tilbagemelding.</p>
+                </div>
+                <div class="flow-step">
+                  <strong>3. Ordre modtaget ved kunden</strong>
+                  <p>Ordren er leveret og klar til næste interne trin.</p>
+                </div>
+                <div class="flow-step">
+                  <strong>4. Sendes til fakturering</strong>
+                  <p>Næste menu er Fakturering til kunde.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-header">
+                <h3>Samlede leverandørordrer</h3>
+                <span class="panel-meta">Klar til afsendelse</span>
+              </div>
+              <div class="list">
+                <div class="list-item">
+                  <div>
                   <strong>Total Rent · kladde</strong>
                   <p>27 linjer fra 9 kunder · mailtekst klar til kopi</p>
                 </div>
@@ -597,8 +623,8 @@
                 </div>
                 <span class="status-pill neutral">Udkast</span>
               </div>
-            </div>
-          </article>
+              </div>
+            </article>
           <article class="panel">
             <div class="panel-header">
               <h3>Mailkladde</h3>
@@ -616,6 +642,25 @@
               <div class="action-block">
                 <strong>Gem kladde</strong>
                 <p>Varebestilleren kan nu gemme leverandørkladden som en rigtig purchase order, så linjerne ikke længere står som åbne i kladdeoversigten.</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="view-customer-invoicing">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Fakturering til kunde</h3>
+              <span class="panel-meta">Næste menu</span>
+            </div>
+            <div class="action-list">
+              <div class="action-block">
+                <strong>Klar fra leverandørordre</strong>
+                <p>Når en ordre er modtaget ved kunden, skal den videre hertil som næste trin i flowet.</p>
+              </div>
+              <div class="action-block">
+                <strong>Grundlag for fakturering</strong>
+                <p>Denne menu er nu oprettet som mål for næste procestrin.</p>
               </div>
             </div>
           </article>

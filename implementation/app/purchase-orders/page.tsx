@@ -1,3 +1,4 @@
+import Link from "next/link";
 import CreatePurchaseOrderButton from "@/components/CreatePurchaseOrderButton";
 import { getPurchaseDraftsData } from "@/lib/orders/purchase-order-queries";
 
@@ -9,10 +10,11 @@ export default async function PurchaseOrdersPage() {
     <main className="page-shell">
       <section className="hero">
         <p className="code">/purchase-orders</p>
-        <h1>Leverandørkladder</h1>
+        <h1>Leverandørordre</h1>
         <p>
-          Her samles alle linjer, der er klar til bestilling, i interne leverandørkladder.
-          Mailteksten kan kopieres direkte til Outlook, når varebestilleren er tilfreds.
+          Her håndteres flowet fra afsendt ordre til modtaget ordre ved kunden. Når ordren er
+          modtaget ved kunden, skal den videre til menuen{" "}
+          <Link href="/customer-invoicing">Fakturering til kunde</Link>.
         </p>
 
         <div className="grid">
@@ -29,25 +31,50 @@ export default async function PurchaseOrdersPage() {
             <p className="metric-inline">{source === "live" ? "Live" : "Mock"}</p>
           </article>
           <article className="card">
-            <strong>Status</strong>
-            <p className="metric-inline">Kladde</p>
+            <strong>Næste menu</strong>
+            <p className="metric-inline">Fakturering</p>
           </article>
         </div>
       </section>
 
       <section className="panel-stack">
-        <div className="card">
+        <article className="card">
           <div className="card-header">
             <div>
-              <p className="kicker">Ugens bestilling</p>
-              <h2>Samlet overblik</h2>
+              <p className="kicker">Flow</p>
+              <h2>Leverandørordre-flow</h2>
             </div>
             <span className={`pill ${source === "live" ? "success" : "warning"}`}>
               {source === "live" ? "Live data" : "Mock fallback"}
             </span>
           </div>
           {message && <p className="muted">{message}</p>}
-        </div>
+
+          <div className="flow-stage-grid">
+            <div className="flow-stage-card">
+              <p className="kicker">1</p>
+              <h3>Afsendt ordre</h3>
+              <p className="muted">Ordren er sendt til leverandøren.</p>
+            </div>
+            <div className="flow-stage-card">
+              <p className="kicker">2</p>
+              <h3>Afventer bekræftelse fra leverandør</h3>
+              <p className="muted">Vi afventer ordrebekræftelse eller tilbagemelding.</p>
+            </div>
+            <div className="flow-stage-card">
+              <p className="kicker">3</p>
+              <h3>Ordre modtaget ved kunden</h3>
+              <p className="muted">Ordren er leveret og klar til næste interne trin.</p>
+            </div>
+            <div className="flow-stage-card">
+              <p className="kicker">4</p>
+              <h3>Sendes til fakturering</h3>
+              <p className="muted">
+                Næste menu er <Link href="/customer-invoicing">Fakturering til kunde</Link>.
+              </p>
+            </div>
+          </div>
+        </article>
 
         {groups.map((group) => (
           <article className="card" key={group.supplierId}>
@@ -60,7 +87,7 @@ export default async function PurchaseOrdersPage() {
                 </p>
               </div>
               <div className="button-row">
-                <span className="pill success">Klar til mailkladde</span>
+                <span className="pill success">Klar til afsendt ordre</span>
                 {group.supplierEmail ? (
                   <span className="pill neutral">{group.supplierEmail}</span>
                 ) : null}

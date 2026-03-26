@@ -530,6 +530,20 @@ a {
   gap: 8px;
 }
 
+.flow-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.flow-stage-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #fffefb;
+  border: 1px solid #ece7dd;
+}
+
 @media (max-width: 720px) {
   .app-header-inner {
     flex-direction: column;
@@ -543,7 +557,8 @@ a {
   .orders-dashboard-grid,
   .two-grid,
   .stats-grid,
-  .line-editor-grid {
+  .line-editor-grid,
+  .flow-stage-grid {
     grid-template-columns: 1fr;
   }
 
