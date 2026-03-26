@@ -31,7 +31,7 @@ export default function CustomerInvoicingPage() {
             <span className="pill neutral">Næste trin</span>
           </div>
           <p className="muted">
-            Ordredata skal flyde hertil efter statusen “Ordre modtaget ved kunden”.
+            Ordredata skal flyde hertil efter statusen "Ordre modtaget ved kunden".
           </p>
         </article>
       </section>
