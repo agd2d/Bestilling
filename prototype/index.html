@@ -601,20 +601,20 @@
               </div>
               <div class="flow-steps">
                 <div class="flow-step">
-                  <strong>1. Afsendt ordre</strong>
-                  <p>Ordren er sendt til leverandøren.</p>
+                  <strong>1. Ordre afgivet</strong>
+                  <p>Ordren får ordrenummer og låses for nye varer.</p>
                 </div>
                 <div class="flow-step">
-                  <strong>2. Afventer bekræftelse fra leverandør</strong>
-                  <p>Vi afventer ordrebekræftelse eller tilbagemelding.</p>
+                  <strong>2. Bekræftet af leverandør</strong>
+                  <p>Leverandøren har bekræftet ordren.</p>
                 </div>
                 <div class="flow-step">
-                  <strong>3. Ordre modtaget ved kunden</strong>
-                  <p>Ordren er leveret og klar til næste interne trin.</p>
+                  <strong>3. Modtaget ved kunde</strong>
+                  <p>Ordren flyttes herefter til Fakturering til kunde.</p>
                 </div>
                 <div class="flow-step">
-                  <strong>4. Sendes til fakturering</strong>
-                  <p>Næste menu er Fakturering til kunde.</p>
+                  <strong>4. Ny kladde ved nye varer</strong>
+                  <p>Nye varelinjer går i en ny kladde og ikke ind i den lukkede ordre.</p>
                 </div>
               </div>
             </article>
@@ -622,27 +622,20 @@
             <article class="panel">
               <div class="panel-header">
                 <h3>Aktive leverandørordrer</h3>
-                <span class="panel-meta">Status kan ændres</span>
+                <span class="panel-meta">Lukkede ordrer med ordrenummer</span>
               </div>
               <div class="list">
                 <div class="list-item">
                   <div>
                     <strong>Total Rent · PO-2026-031</strong>
-                    <p>27 linjer fra 9 kunder · afsendt 26/03 08:35</p>
+                    <p>27 linjer fra 9 kunder · ordre afgivet 26/03 08:35</p>
                   </div>
                   <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
                 </div>
                 <div class="list-item">
                   <div>
                     <strong>Abena · PO-2026-029</strong>
-                    <p>9 linjer fra 3 kunder · afventer ordrebekræftelse</p>
-                  </div>
-                  <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
-                </div>
-                <div class="list-item">
-                  <div>
-                    <strong>MultiLine · PO-2026-028</strong>
-                    <p>4 linjer fra 2 kunder · modtaget ved kunden</p>
+                    <p>9 linjer fra 3 kunder · bekræftet af leverandør</p>
                   </div>
                   <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
                 </div>
@@ -652,7 +645,7 @@
             <article class="panel">
               <div class="panel-header">
                 <h3>Kundebestillinger sendt til ordre</h3>
-                <span class="panel-meta">Kan sendes tilbage</span>
+                <span class="panel-meta">Kun dem som endnu ikke er lukket</span>
               </div>
               <div class="list">
                 <div class="list-item">
@@ -669,6 +662,10 @@
               <div class="panel-header">
                 <h3>Samlede leverandørordrer</h3>
                 <span class="panel-meta">Klar til afsendelse</span>
+              </div>
+              <div class="action-block">
+                <strong>Ordrenummer og lås</strong>
+                <p>Når ordren oprettes, får den et ordrenummer og lukkes. Nye varer går derfor i en ny kladde.</p>
               </div>
               <div class="list">
                 <div class="list-item">
@@ -718,7 +715,7 @@
             <div class="action-list">
               <div class="action-block">
                 <strong>Klar fra leverandørordre</strong>
-                <p>Når en ordre er modtaget ved kunden, skal den videre hertil som næste trin i flowet.</p>
+                <p>Når en ordre markeres som modtaget ved kunde, flyttes den hertil som næste trin i flowet.</p>
               </div>
               <div class="action-block">
                 <strong>Grundlag for fakturering</strong>
@@ -736,7 +733,7 @@
               <div class="list-item">
                 <div>
                   <strong>Abena · PO-2026-027</strong>
-                  <p>6 linjer fra 2 kunder · sendt videre til fakturering</p>
+                  <p>6 linjer fra 2 kunder · modtaget ved kunde</p>
                 </div>
                 <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
               </div>

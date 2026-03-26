@@ -15,7 +15,7 @@ function formatDateTime(value: string | null) {
 }
 
 export default async function CustomerInvoicingPage() {
-  const result = await getSavedPurchaseOrdersData({ status: "completed" });
+  const result = await getSavedPurchaseOrdersData({ status: "partially_delivered" });
 
   return (
     <main className="page-shell">
@@ -23,8 +23,8 @@ export default async function CustomerInvoicingPage() {
         <p className="code">/customer-invoicing</p>
         <h1>Fakturering til kunde</h1>
         <p>
-          Her lander leverandørordrer, når ordren er modtaget ved kunden og sendt videre til
-          fakturering.
+          Her lander leverandørordrer, når ordren er markeret som modtaget ved kunden og sendt videre
+          til fakturering.
         </p>
 
         <div className="grid">
@@ -54,8 +54,8 @@ export default async function CustomerInvoicingPage() {
 
           {result.purchaseOrders.length === 0 ? (
             <p className="muted">
-              Ingen leverandørordrer er sendt videre endnu. Når en ordre sættes til sidste trin i
-              menuen Leverandørordre, vises den her.
+              Ingen leverandørordrer er sendt videre endnu. Når en ordre sættes til "Modtaget ved
+              kunde" i menuen Leverandørordre, vises den her.
             </p>
           ) : (
             <div className="panel-stack">
@@ -63,7 +63,7 @@ export default async function CustomerInvoicingPage() {
                 <article className="card nested-card" key={purchaseOrder.id}>
                   <div className="card-header">
                     <div>
-                      <p className="kicker">Leverandør</p>
+                      <p className="kicker">Ordrenummer {purchaseOrder.orderNumber}</p>
                       <h3>
                         <Link className="table-link" href={`/purchase-orders/${purchaseOrder.id}`}>
                           {purchaseOrder.supplierName}
@@ -79,7 +79,7 @@ export default async function CustomerInvoicingPage() {
                   </div>
 
                   <p className="table-meta">Oprettet: {formatDateTime(purchaseOrder.createdAt)}</p>
-                  <p className="table-meta">Afsendt: {formatDateTime(purchaseOrder.sentAt)}</p>
+                  <p className="table-meta">Afgivet: {formatDateTime(purchaseOrder.sentAt)}</p>
                   {purchaseOrder.emailSubject ? (
                     <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p>
                   ) : null}

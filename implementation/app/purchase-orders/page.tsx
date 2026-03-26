@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CreatePurchaseOrderButton from "@/components/CreatePurchaseOrderButton";
+import PurchaseOrderLifecycleButtons from "@/components/PurchaseOrderLifecycleButtons";
 import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
 import SupplierMailButton from "@/components/SupplierMailButton";
 import { getOrdersListData } from "@/lib/orders/order-queries";
@@ -30,8 +31,11 @@ export default async function PurchaseOrdersPage() {
 
   const totalDraftLines = draftResult.groups.reduce((sum, group) => sum + group.lineCount, 0);
   const readyForInvoicingCount = savedResult.purchaseOrders.filter(
-    (purchaseOrder) => purchaseOrder.status === "completed"
+    (purchaseOrder) => purchaseOrder.status === "partially_delivered"
   ).length;
+  const activePurchaseOrders = savedResult.purchaseOrders.filter(
+    (purchaseOrder) => !["partially_delivered", "cancelled"].includes(purchaseOrder.status)
+  );
 
   return (
     <main className="page-shell">
@@ -39,9 +43,8 @@ export default async function PurchaseOrdersPage() {
         <p className="code">/purchase-orders</p>
         <h1>Leverandørordre</h1>
         <p>
-          Her håndteres flowet fra afsendt ordre til modtaget ordre ved kunden. Når ordren er
-          modtaget ved kunden, skal den videre til menuen{" "}
-          <Link href="/customer-invoicing">Fakturering til kunde</Link>.
+          Her håndteres flowet fra ordre afgivet til modtaget ved kunde. Når ordren er modtaget ved
+          kunden, flyttes den videre til <Link href="/customer-invoicing">Fakturering til kunde</Link>.
         </p>
 
         <div className="grid">
@@ -50,12 +53,12 @@ export default async function PurchaseOrdersPage() {
             <p className="metric-inline">{draftResult.groups.length}</p>
           </article>
           <article className="card">
-            <strong>Linjer samlet</strong>
+            <strong>Linjer i nye kladder</strong>
             <p className="metric-inline">{totalDraftLines}</p>
           </article>
           <article className="card">
-            <strong>Gemte leverandørordrer</strong>
-            <p className="metric-inline">{savedResult.purchaseOrders.length}</p>
+            <strong>Lukkede leverandørordrer</strong>
+            <p className="metric-inline">{activePurchaseOrders.length}</p>
           </article>
           <article className="card">
             <strong>Klar til fakturering</strong>
@@ -80,25 +83,23 @@ export default async function PurchaseOrdersPage() {
           <div className="flow-stage-grid">
             <div className="flow-stage-card">
               <p className="kicker">1</p>
-              <h3>Afsendt ordre</h3>
-              <p className="muted">Ordren er sendt til leverandøren.</p>
+              <h3>Ordre afgivet</h3>
+              <p className="muted">Ordren får ordrenummer og låses for nye varer.</p>
             </div>
             <div className="flow-stage-card">
               <p className="kicker">2</p>
-              <h3>Afventer bekræftelse fra leverandør</h3>
-              <p className="muted">Vi afventer ordrebekræftelse eller tilbagemelding.</p>
+              <h3>Bekræftet af leverandør</h3>
+              <p className="muted">Leverandøren har bekræftet ordren.</p>
             </div>
             <div className="flow-stage-card">
               <p className="kicker">3</p>
-              <h3>Ordre modtaget ved kunden</h3>
-              <p className="muted">Ordren er leveret og klar til næste interne trin.</p>
+              <h3>Modtaget ved kunde</h3>
+              <p className="muted">Ordren flyttes herefter videre til fakturering.</p>
             </div>
             <div className="flow-stage-card">
               <p className="kicker">4</p>
-              <h3>Sendes til fakturering</h3>
-              <p className="muted">
-                Næste menu er <Link href="/customer-invoicing">Fakturering til kunde</Link>.
-              </p>
+              <h3>Ny kladde ved nye varer</h3>
+              <p className="muted">Nye varer går i en ny kladde og ikke ind i den lukkede ordre.</p>
             </div>
           </div>
         </article>
@@ -107,20 +108,20 @@ export default async function PurchaseOrdersPage() {
           <div className="card-header">
             <div>
               <p className="kicker">Aktive leverandørordrer</p>
-              <h2>Status kan ændres direkte</h2>
+              <h2>Lukkede ordrer med ordrenummer</h2>
             </div>
-            <span className="pill neutral">{savedResult.purchaseOrders.length} ordrer</span>
+            <span className="pill neutral">{activePurchaseOrders.length} ordrer</span>
           </div>
 
-          {savedResult.purchaseOrders.length === 0 ? (
-            <p className="muted">Ingen leverandørordrer er gemt endnu.</p>
+          {activePurchaseOrders.length === 0 ? (
+            <p className="muted">Ingen leverandørordrer er oprettet endnu.</p>
           ) : (
             <div className="panel-stack">
-              {savedResult.purchaseOrders.map((purchaseOrder) => (
+              {activePurchaseOrders.map((purchaseOrder) => (
                 <article className="card nested-card" key={purchaseOrder.id}>
                   <div className="card-header">
                     <div>
-                      <p className="kicker">Leverandør</p>
+                      <p className="kicker">Ordrenummer {purchaseOrder.orderNumber}</p>
                       <h3>
                         <Link className="table-link" href={`/purchase-orders/${purchaseOrder.id}`}>
                           {purchaseOrder.supplierName}
@@ -134,6 +135,9 @@ export default async function PurchaseOrdersPage() {
                       <span className={`pill ${purchaseOrder.statusTone}`}>
                         {purchaseOrder.statusLabel}
                       </span>
+                      <span className="pill neutral">
+                        {purchaseOrder.status === "draft" ? "Åben ordre" : "Lukket ordre"}
+                      </span>
                       {purchaseOrder.supplierEmail ? (
                         <span className="pill neutral">{purchaseOrder.supplierEmail}</span>
                       ) : null}
@@ -143,7 +147,7 @@ export default async function PurchaseOrdersPage() {
                   <div className="two-grid">
                     <div>
                       <p className="table-meta">Oprettet: {formatDateTime(purchaseOrder.createdAt)}</p>
-                      <p className="table-meta">Afsendt: {formatDateTime(purchaseOrder.sentAt)}</p>
+                      <p className="table-meta">Afgivet: {formatDateTime(purchaseOrder.sentAt)}</p>
                       {purchaseOrder.emailSubject ? (
                         <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p>
                       ) : null}
@@ -153,10 +157,16 @@ export default async function PurchaseOrdersPage() {
                         </Link>
                       </p>
                     </div>
-                    <PurchaseOrderStatusSelect
-                      purchaseOrderId={purchaseOrder.id}
-                      currentStatus={purchaseOrder.status}
-                    />
+                    <div className="panel-stack">
+                      <PurchaseOrderStatusSelect
+                        purchaseOrderId={purchaseOrder.id}
+                        currentStatus={purchaseOrder.status}
+                      />
+                      <PurchaseOrderLifecycleButtons
+                        purchaseOrderId={purchaseOrder.id}
+                        currentStatus={purchaseOrder.status}
+                      />
+                    </div>
                   </div>
                 </article>
               ))}
@@ -174,7 +184,7 @@ export default async function PurchaseOrdersPage() {
           </div>
 
           {stagedOrdersResult.orders.length === 0 ? (
-            <p className="muted">Ingen kundebestillinger er sendt til ordre endnu.</p>
+            <p className="muted">Ingen kundebestillinger venter på at blive lukket som leverandørordre.</p>
           ) : (
             <div className="insight-list">
               {stagedOrdersResult.orders.map((order) => (
@@ -183,7 +193,7 @@ export default async function PurchaseOrdersPage() {
                     <strong>{order.customerName}</strong>
                     <p>{order.locationLabel}</p>
                   </div>
-                  <span className="pill warning">Tilbage mulig</span>
+                  <span className="pill warning">Klar til ny kladde</span>
                 </Link>
               ))}
             </div>
@@ -194,7 +204,7 @@ export default async function PurchaseOrdersPage() {
           <div className="card-header">
             <div>
               <p className="kicker">Nye kladder</p>
-              <h2>Klar til oprettelse</h2>
+              <h2>Klar til næste lukkede ordre</h2>
             </div>
             <span className={`pill ${draftResult.source === "live" ? "success" : "warning"}`}>
               {draftResult.source === "live" ? "Live data" : "Mock fallback"}
@@ -203,7 +213,7 @@ export default async function PurchaseOrdersPage() {
           {draftResult.message ? <p className="muted">{draftResult.message}</p> : null}
 
           {draftResult.groups.length === 0 ? (
-            <p className="muted">Ingen nye linjer er klar til at blive samlet lige nu.</p>
+            <p className="muted">Ingen nye linjer er klar til at blive samlet i en ny kladde lige nu.</p>
           ) : (
             draftResult.groups.map((group) => (
               <article className="card nested-card" key={group.supplierId}>
@@ -216,7 +226,7 @@ export default async function PurchaseOrdersPage() {
                     </p>
                   </div>
                   <div className="button-row">
-                    <span className="pill success">Klar til afsendt ordre</span>
+                    <span className="pill success">Klar til ny lukket ordre</span>
                     {group.supplierEmail ? (
                       <span className="pill neutral">{group.supplierEmail}</span>
                     ) : null}
@@ -248,7 +258,7 @@ export default async function PurchaseOrdersPage() {
                   </tbody>
                 </table>
 
-                  <div className="purchase-actions-bar">
+                <div className="purchase-actions-bar">
                   <div className="button-row">
                     <CreatePurchaseOrderButton
                       supplierId={group.supplierId}

@@ -210,7 +210,11 @@ function filterOrdersByFlow(
   options?: { includeSentToOrder?: boolean; onlySentToOrder?: boolean }
 ) {
   if (options?.onlySentToOrder) {
-    return orders.filter((order) => order.rawStatus === "sent_to_supplier");
+    return orders.filter(
+      (order) =>
+        order.rawStatus === "sent_to_supplier" &&
+        order.lines.some((line) => line.rawStatus !== "included_in_purchase_order")
+    );
   }
 
   if (options?.includeSentToOrder) {

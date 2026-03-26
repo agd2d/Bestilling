@@ -1,5 +1,4 @@
 import { hasEnv } from "@/lib/env";
-import { getOrdersListData } from "@/lib/orders/order-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   formatPurchaseOrderStatus,
@@ -35,6 +34,7 @@ export interface PurchaseDraftsResult {
 
 export interface SavedPurchaseOrderCard {
   id: string;
+  orderNumber: string;
   supplierName: string;
   supplierEmail: string | null;
   status: string;
@@ -67,6 +67,7 @@ export interface PurchaseOrderDetailLine {
 export interface PurchaseOrderDetailResult {
   purchaseOrder: {
     id: string;
+    orderNumber: string;
     supplierName: string;
     supplierEmail: string | null;
     status: string;
@@ -189,29 +190,31 @@ const mockDrafts: PurchaseDraftGroup[] = [
 const mockSavedPurchaseOrders: SavedPurchaseOrderCard[] = [
   {
     id: "po-mock-1",
+    orderNumber: "HS-20260326-0830-TR01",
     supplierName: "Total Rent",
     supplierEmail: "kundeservice@totalrent.dk",
-    status: "ready_to_send",
-    statusLabel: formatPurchaseOrderStatus("ready_to_send"),
-    statusTone: purchaseOrderStatusTone("ready_to_send"),
+    status: "sent",
+    statusLabel: formatPurchaseOrderStatus("sent"),
+    statusTone: purchaseOrderStatusTone("sent"),
     lineCount: 12,
     customerCount: 4,
     createdAt: "2026-03-26T08:30:00.000Z",
     sentAt: "2026-03-26T08:35:00.000Z",
-    emailSubject: "Bestilling fra Hvidbjerg Service - Total Rent",
+    emailSubject: "[HS-20260326-0830-TR01] Bestilling fra Hvidbjerg Service - Total Rent",
   },
   {
     id: "po-mock-2",
+    orderNumber: "HS-20260325-1320-AB01",
     supplierName: "Abena",
     supplierEmail: "ordre@abena.dk",
-    status: "completed",
-    statusLabel: formatPurchaseOrderStatus("completed"),
-    statusTone: purchaseOrderStatusTone("completed"),
+    status: "partially_delivered",
+    statusLabel: formatPurchaseOrderStatus("partially_delivered"),
+    statusTone: purchaseOrderStatusTone("partially_delivered"),
     lineCount: 6,
     customerCount: 2,
     createdAt: "2026-03-25T13:20:00.000Z",
     sentAt: "2026-03-25T13:30:00.000Z",
-    emailSubject: "Bestilling fra Hvidbjerg Service - Abena",
+    emailSubject: "[HS-20260325-1320-AB01] Bestilling fra Hvidbjerg Service - Abena",
   },
 ];
 
@@ -222,15 +225,16 @@ const mockPurchaseOrderDetails: Record<
   "po-mock-1": {
     purchaseOrder: {
       id: "po-mock-1",
+      orderNumber: "HS-20260326-0830-TR01",
       supplierName: "Total Rent",
       supplierEmail: "kundeservice@totalrent.dk",
-      status: "ready_to_send",
-      statusLabel: formatPurchaseOrderStatus("ready_to_send"),
-      statusTone: purchaseOrderStatusTone("ready_to_send"),
+      status: "sent",
+      statusLabel: formatPurchaseOrderStatus("sent"),
+      statusTone: purchaseOrderStatusTone("sent"),
       createdAt: "2026-03-26T08:30:00.000Z",
       sentAt: "2026-03-26T08:35:00.000Z",
-      emailSubject: "Bestilling fra Hvidbjerg Service - Total Rent",
-      emailBody: "Eksempel på samlet mailtekst til leverandøren.",
+      emailSubject: "[HS-20260326-0830-TR01] Bestilling fra Hvidbjerg Service - Total Rent",
+      emailBody: "Ordrenummer: HS-20260326-0830-TR01\n\nEksempel på samlet mailtekst til leverandøren.",
       lineCount: 3,
       customerCount: 2,
     },
@@ -271,6 +275,21 @@ const mockPurchaseOrderDetails: Record<
 
 function canUseLiveData() {
   return hasEnv("NEXT_PUBLIC_SUPABASE_URL") && hasEnv("SUPABASE_SERVICE_ROLE_KEY");
+}
+
+function extractPurchaseOrderNumber(id: string, createdAt: string, emailSubject: string | null) {
+  const match = emailSubject?.match(/^\[([^\]]+)\]/);
+
+  if (match?.[1]) {
+    return match[1];
+  }
+
+  const date = new Date(createdAt);
+  const datePart = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+
+  return `HS-${datePart}-${id.slice(0, 6).toUpperCase()}`;
 }
 
 function buildEmailBody(group: Omit<PurchaseDraftGroup, "emailBody" | "emailSubject">) {
@@ -320,6 +339,7 @@ export async function getPurchaseDraftsData(): Promise<PurchaseDraftsResult> {
       { data: customers, error: customersError },
       { data: suppliers, error: suppliersError },
       { data: purchaseOrderLines, error: purchaseOrderLinesError },
+      { data: purchaseOrders, error: purchaseOrdersError },
     ] = await Promise.all([
       supabase
         .from("customer_order_request_lines")
@@ -330,11 +350,17 @@ export async function getPurchaseDraftsData(): Promise<PurchaseDraftsResult> {
       supabase.from("customer_order_requests").select("id, customer_id, location_label, status"),
       supabase.from("customers").select("id, name"),
       supabase.from("suppliers").select("id, name, order_email, email"),
-      supabase.from("purchase_order_lines").select("request_line_id"),
+      supabase.from("purchase_order_lines").select("request_line_id, purchase_order_id"),
+      supabase.from("purchase_orders").select("id, status"),
     ]);
 
     const firstError =
-      linesError || requestsError || customersError || suppliersError || purchaseOrderLinesError;
+      linesError ||
+      requestsError ||
+      customersError ||
+      suppliersError ||
+      purchaseOrderLinesError ||
+      purchaseOrdersError;
 
     if (firstError) {
       return {
@@ -347,12 +373,23 @@ export async function getPurchaseDraftsData(): Promise<PurchaseDraftsResult> {
     const requestMap = new Map(
       ((requests ?? []) as RequestRow[])
         .filter((request) => request.status === "sent_to_supplier")
-        .map((request) => [request.id, request as RequestRow])
+        .map((request) => [request.id, request])
     );
-    const customerMap = new Map((customers ?? []).map((customer) => [customer.id, customer as CustomerRow]));
-    const supplierMap = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier as SupplierRow]));
+    const customerMap = new Map(
+      ((customers ?? []) as CustomerRow[]).map((customer) => [customer.id, customer])
+    );
+    const supplierMap = new Map(
+      ((suppliers ?? []) as SupplierRow[]).map((supplier) => [supplier.id, supplier])
+    );
+    const activePurchaseOrderIds = new Set(
+      ((purchaseOrders ?? []) as PurchaseOrderRow[])
+        .filter((purchaseOrder) => purchaseOrder.status !== "cancelled")
+        .map((purchaseOrder) => purchaseOrder.id)
+    );
     const alreadyGrouped = new Set(
-      ((purchaseOrderLines ?? []) as PurchaseOrderLineRow[]).map((line) => line.request_line_id)
+      ((purchaseOrderLines ?? []) as PurchaseOrderLineRow[])
+        .filter((line) => activePurchaseOrderIds.has(line.purchase_order_id))
+        .map((line) => line.request_line_id)
     );
 
     const grouped = new Map<string, Omit<PurchaseDraftGroup, "emailBody" | "emailSubject">>();
@@ -401,7 +438,7 @@ export async function getPurchaseDraftsData(): Promise<PurchaseDraftsResult> {
         .sort((a, b) => b.lineCount - a.lineCount)
         .map((group) => withEmailDraft(group)),
       source: "live",
-      message: "Leverandørkladder er bygget fra linjer klar til bestilling.",
+      message: "Nye leverandørkladder er bygget fra varelinjer, som endnu ikke ligger i en lukket ordre.",
     };
   } catch (error) {
     return {
@@ -448,12 +485,15 @@ export async function getSavedPurchaseOrdersData(params?: {
       { data: customers, error: customersError },
     ] = await Promise.all([
       purchaseOrdersQuery,
-      supabase.from("purchase_order_lines").select("id, purchase_order_id, request_line_id, customer_id, quantity, unit, line_status"),
+      supabase
+        .from("purchase_order_lines")
+        .select("id, purchase_order_id, request_line_id, customer_id, quantity, unit, line_status"),
       supabase.from("suppliers").select("id, name, order_email, email"),
       supabase.from("customers").select("id, name"),
     ]);
 
-    const firstError = purchaseOrdersError || purchaseOrderLinesError || suppliersError || customersError;
+    const firstError =
+      purchaseOrdersError || purchaseOrderLinesError || suppliersError || customersError;
 
     if (firstError) {
       return {
@@ -463,8 +503,12 @@ export async function getSavedPurchaseOrdersData(params?: {
       };
     }
 
-    const supplierMap = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier as SupplierRow]));
-    const customerMap = new Map((customers ?? []).map((customer) => [customer.id, customer as CustomerRow]));
+    const supplierMap = new Map(
+      ((suppliers ?? []) as SupplierRow[]).map((supplier) => [supplier.id, supplier])
+    );
+    const customerMap = new Map(
+      ((customers ?? []) as CustomerRow[]).map((customer) => [customer.id, customer])
+    );
     const lineMap = new Map<string, PurchaseOrderLineRow[]>();
 
     for (const line of (purchaseOrderLines ?? []) as PurchaseOrderLineRow[]) {
@@ -476,10 +520,17 @@ export async function getSavedPurchaseOrdersData(params?: {
     const cards = ((purchaseOrders ?? []) as PurchaseOrderRow[]).map((purchaseOrder) => {
       const supplier = supplierMap.get(purchaseOrder.supplier_id);
       const lines = lineMap.get(purchaseOrder.id) ?? [];
-      const customerIds = new Set(lines.map((line) => customerMap.get(line.customer_id)?.id ?? line.customer_id));
+      const customerIds = new Set(
+        lines.map((line) => customerMap.get(line.customer_id)?.id ?? line.customer_id)
+      );
 
       return {
         id: purchaseOrder.id,
+        orderNumber: extractPurchaseOrderNumber(
+          purchaseOrder.id,
+          purchaseOrder.created_at,
+          purchaseOrder.email_subject
+        ),
         supplierName: supplier?.name ?? "Ukendt leverandør",
         supplierEmail: supplier?.order_email ?? supplier?.email ?? null,
         status: purchaseOrder.status,
@@ -498,7 +549,7 @@ export async function getSavedPurchaseOrdersData(params?: {
       source: "live",
       message: params?.status
         ? "Leverandørordrer er filtreret på valgt flowtrin."
-        : "Gemte leverandørordrer vises fra databasen.",
+        : "Lukkede og åbne leverandørordrer vises fra databasen.",
     };
   } catch (error) {
     return {
@@ -619,9 +670,15 @@ export async function getPurchaseOrderDetailData(
     const requestLineMap = new Map(
       ((requestLines ?? []) as PurchaseOrderRequestLineRow[]).map((line) => [line.id, line])
     );
-    const requestMap = new Map((requests ?? []).map((request) => [request.id, request as RequestRow]));
-    const supplierMap = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier as SupplierRow]));
-    const customerMap = new Map((customers ?? []).map((customer) => [customer.id, customer as CustomerRow]));
+    const requestMap = new Map(
+      ((requests ?? []) as RequestRow[]).map((request) => [request.id, request])
+    );
+    const supplierMap = new Map(
+      ((suppliers ?? []) as SupplierRow[]).map((supplier) => [supplier.id, supplier])
+    );
+    const customerMap = new Map(
+      ((customers ?? []) as CustomerRow[]).map((customer) => [customer.id, customer])
+    );
 
     const detailLines = ((purchaseOrderLines ?? []) as PurchaseOrderLineRow[]).map((line) => {
       const requestLine = requestLineMap.get(line.request_line_id);
@@ -634,7 +691,8 @@ export async function getPurchaseOrderDetailData(
         locationLabel: request?.location_label ?? "Ukendt lokation",
         productNumber:
           requestLine?.resolved_product_number ?? requestLine?.raw_product_number ?? "-",
-        productName: requestLine?.resolved_product_name ?? requestLine?.raw_product_name ?? "Ukendt vare",
+        productName:
+          requestLine?.resolved_product_name ?? requestLine?.raw_product_name ?? "Ukendt vare",
         quantity: Number(line.quantity ?? 0),
         unit: line.unit ?? null,
         lineStatus: line.line_status ?? "draft",
@@ -647,6 +705,11 @@ export async function getPurchaseOrderDetailData(
     return {
       purchaseOrder: {
         id: (purchaseOrder as PurchaseOrderRow).id,
+        orderNumber: extractPurchaseOrderNumber(
+          (purchaseOrder as PurchaseOrderRow).id,
+          (purchaseOrder as PurchaseOrderRow).created_at,
+          (purchaseOrder as PurchaseOrderRow).email_subject
+        ),
         supplierName: supplier?.name ?? "Ukendt leverandør",
         supplierEmail: supplier?.order_email ?? supplier?.email ?? null,
         status: (purchaseOrder as PurchaseOrderRow).status,
@@ -669,9 +732,7 @@ export async function getPurchaseOrderDetailData(
       lines: [],
       source: "mock",
       message:
-        error instanceof Error
-          ? `Live læsning fejlede: ${error.message}.`
-          : "Live læsning fejlede.",
+        error instanceof Error ? `Live læsning fejlede: ${error.message}.` : "Live læsning fejlede.",
     };
   }
 }

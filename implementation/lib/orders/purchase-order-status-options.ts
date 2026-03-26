@@ -2,7 +2,6 @@ export const purchaseOrderStatusOptions = [
   "sent",
   "ready_to_send",
   "partially_delivered",
-  "completed",
 ] as const;
 
 export type PurchaseOrderStatusValue = (typeof purchaseOrderStatusOptions)[number];
@@ -10,15 +9,15 @@ export type PurchaseOrderStatusValue = (typeof purchaseOrderStatusOptions)[numbe
 export function formatPurchaseOrderStatus(status: string) {
   switch (status) {
     case "draft":
-      return "Kladde";
+      return "Åben ordre";
     case "sent":
-      return "Afsendt ordre";
+      return "Ordre afgivet";
     case "ready_to_send":
-      return "Afventer bekræftelse fra leverandør";
+      return "Bekræftet af leverandør";
     case "partially_delivered":
-      return "Ordre modtaget ved kunden";
+      return "Modtaget ved kunde";
     case "completed":
-      return "Sendt til fakturering";
+      return "Fakturering til kunde";
     case "cancelled":
       return "Annulleret";
     default:
@@ -28,6 +27,8 @@ export function formatPurchaseOrderStatus(status: string) {
 
 export function purchaseOrderStatusTone(status: string) {
   switch (status) {
+    case "draft":
+      return "warning";
     case "sent":
       return "info";
     case "ready_to_send":

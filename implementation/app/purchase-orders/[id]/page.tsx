@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import PurchaseOrderLifecycleButtons from "@/components/PurchaseOrderLifecycleButtons";
 import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
 import SupplierMailButton from "@/components/SupplierMailButton";
 import { getPurchaseOrderDetailData } from "@/lib/orders/purchase-order-queries";
@@ -26,7 +26,7 @@ export default async function PurchaseOrderDetailPage({
   const result = await getPurchaseOrderDetailData(id);
 
   if (!result.purchaseOrder) {
-    notFound();
+    return null;
   }
 
   const purchaseOrder = result.purchaseOrder;
@@ -37,7 +37,7 @@ export default async function PurchaseOrderDetailPage({
         <p className="code">/purchase-orders/{purchaseOrder.id}</p>
         <h1>{purchaseOrder.supplierName}</h1>
         <p>
-          Detaljeside for leverandørordre med status, mailgrundlag og alle samlede linjer.
+          Detaljeside for leverandørordre med ordrenummer, status, mailgrundlag og alle samlede linjer.
           Tilbage til <Link href="/purchase-orders">Leverandørordre</Link>.
         </p>
 
@@ -55,8 +55,8 @@ export default async function PurchaseOrderDetailPage({
             <p className="metric-inline">{purchaseOrder.lineCount}</p>
           </article>
           <article className="card">
-            <strong>Afsendt</strong>
-            <p className="metric-inline">{formatDateTime(purchaseOrder.sentAt)}</p>
+            <strong>Ordrenummer</strong>
+            <p className="metric-inline">{purchaseOrder.orderNumber}</p>
           </article>
         </div>
       </section>
@@ -75,12 +75,11 @@ export default async function PurchaseOrderDetailPage({
 
           <div className="two-grid">
             <div>
+              <p className="table-meta">Ordrenummer: {purchaseOrder.orderNumber}</p>
               <p className="table-meta">Leverandør: {purchaseOrder.supplierName}</p>
-              <p className="table-meta">
-                E-mail: {purchaseOrder.supplierEmail ?? "Ikke registreret"}
-              </p>
+              <p className="table-meta">E-mail: {purchaseOrder.supplierEmail ?? "Ikke registreret"}</p>
               <p className="table-meta">Oprettet: {formatDateTime(purchaseOrder.createdAt)}</p>
-              <p className="table-meta">Afsendt: {formatDateTime(purchaseOrder.sentAt)}</p>
+              <p className="table-meta">Afgivet: {formatDateTime(purchaseOrder.sentAt)}</p>
               {purchaseOrder.emailSubject ? (
                 <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p>
               ) : null}
@@ -94,10 +93,16 @@ export default async function PurchaseOrderDetailPage({
                 </div>
               ) : null}
             </div>
-            <PurchaseOrderStatusSelect
-              purchaseOrderId={purchaseOrder.id}
-              currentStatus={purchaseOrder.status}
-            />
+            <div className="panel-stack">
+              <PurchaseOrderStatusSelect
+                purchaseOrderId={purchaseOrder.id}
+                currentStatus={purchaseOrder.status}
+              />
+              <PurchaseOrderLifecycleButtons
+                purchaseOrderId={purchaseOrder.id}
+                currentStatus={purchaseOrder.status}
+              />
+            </div>
           </div>
         </article>
 

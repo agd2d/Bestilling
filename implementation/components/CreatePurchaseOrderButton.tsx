@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 export default function CreatePurchaseOrderButton({
@@ -14,7 +13,6 @@ export default function CreatePurchaseOrderButton({
   emailSubject: string;
   emailBody: string;
 }) {
-  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -43,14 +41,14 @@ export default function CreatePurchaseOrderButton({
 
     setMessage(data.message ?? 'Leverandørordre gemt');
     startTransition(() => {
-      router.refresh();
+      window.location.reload();
     });
   }
 
   return (
     <div className="purchase-action-wrap">
       <button type="button" className="button" onClick={() => void createDraft()} disabled={isPending}>
-        {isPending ? 'Opretter leverandørordre...' : 'Opret leverandørordre'}
+        {isPending ? 'Afgiver leverandørordre...' : 'Afgiv ordre og lås'}
       </button>
       {message ? <p className="table-meta">{message}</p> : null}
     </div>

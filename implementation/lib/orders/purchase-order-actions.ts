@@ -15,6 +15,12 @@ export interface UpdatePurchaseOrderStatusResult {
   message: string;
 }
 
+export interface UpdatePurchaseOrderLifecycleResult {
+  success: boolean;
+  source: "live" | "mock";
+  message: string;
+}
+
 export interface UndoSupplierOrderResult {
   success: boolean;
   source: "live" | "mock";
@@ -46,8 +52,27 @@ interface PurchaseOrderStatusRow {
   status: string;
 }
 
+interface PurchaseOrderLineStatusRow {
+  id: string;
+  request_line_id: string;
+}
+
 function canUseLiveData() {
   return hasEnv("NEXT_PUBLIC_SUPABASE_URL") && hasEnv("SUPABASE_SERVICE_ROLE_KEY");
+}
+
+function createPurchaseOrderNumber() {
+  const now = new Date();
+  const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
+  const timePart = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(
+    2,
+    "0"
+  )}`;
+  const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+
+  return `HS-${datePart}-${timePart}-${randomPart}`;
 }
 
 export async function createPurchaseOrderDraft(params: {
@@ -68,20 +93,21 @@ export async function createPurchaseOrderDraft(params: {
     return {
       success: true,
       source: "mock",
-      message: "Mock fallback: leverandørkladden er ikke skrevet til databasen endnu.",
+      message: "Mock fallback: leverandørordren er ikke skrevet til databasen endnu.",
     };
   }
 
   try {
     const supabase = createAdminClient();
+    const orderNumber = createPurchaseOrderNumber();
 
     const { data: createdPurchaseOrder, error: purchaseOrderError } = await supabase
       .from("purchase_orders")
       .insert({
         supplier_id: params.supplierId,
         status: "sent",
-        email_subject: params.emailSubject,
-        email_body: params.emailBody,
+        email_subject: `[${orderNumber}] ${params.emailSubject}`,
+        email_body: `Ordrenummer: ${orderNumber}\n\n${params.emailBody}`,
         sent_at: new Date().toISOString(),
       })
       .select("id")
@@ -169,7 +195,7 @@ export async function createPurchaseOrderDraft(params: {
     return {
       success: true,
       source: "live",
-      message: "Leverandørordren er oprettet som afsendt.",
+      message: `Leverandørordren ${orderNumber} er oprettet og låst som afgivet.`,
       purchaseOrderId,
     };
   } catch (error) {
@@ -204,6 +230,19 @@ export async function updatePurchaseOrderStatus(params: {
 
   try {
     const supabase = createAdminClient();
+    const { data: linkedLines, error: linkedLinesError } = await supabase
+      .from("purchase_order_lines")
+      .select("id, request_line_id")
+      .eq("purchase_order_id", params.purchaseOrderId);
+
+    if (linkedLinesError) {
+      return {
+        success: false,
+        source: "live",
+        message: linkedLinesError.message,
+      };
+    }
+
     const nextTimestamp =
       params.status === "sent" ? { sent_at: new Date().toISOString() } : {};
 
@@ -224,10 +263,63 @@ export async function updatePurchaseOrderStatus(params: {
       };
     }
 
+    const requestLineIds = ((linkedLines ?? []) as PurchaseOrderLineStatusRow[]).map(
+      (line) => line.request_line_id
+    );
+
+    if (requestLineIds.length > 0) {
+      const requestLineStatus =
+        params.status === "ready_to_send"
+          ? "supplier_confirmed"
+          : params.status === "partially_delivered"
+            ? "delivered"
+            : "included_in_purchase_order";
+      const purchaseLineStatus =
+        params.status === "ready_to_send"
+          ? "confirmed"
+          : params.status === "partially_delivered"
+            ? "delivered"
+            : "sent";
+
+      const { error: updatePurchaseLinesError } = await supabase
+        .from("purchase_order_lines")
+        .update({
+          line_status: purchaseLineStatus,
+        })
+        .eq("purchase_order_id", params.purchaseOrderId);
+
+      if (updatePurchaseLinesError) {
+        return {
+          success: false,
+          source: "live",
+          message: updatePurchaseLinesError.message,
+        };
+      }
+
+      const { error: updateRequestLinesError } = await supabase
+        .from("customer_order_request_lines")
+        .update({
+          line_status: requestLineStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", requestLineIds);
+
+      if (updateRequestLinesError) {
+        return {
+          success: false,
+          source: "live",
+          message: updateRequestLinesError.message,
+        };
+      }
+    }
+
     return {
       success: true,
       source: "live",
-      message: "Leverandørordre-status er opdateret.",
+      message:
+        params.status === "partially_delivered"
+          ? "Ordren er markeret som modtaget ved kunde og flyttes nu til fakturering."
+          : "Leverandørordre-status er opdateret.",
     };
   } catch (error) {
     return {
@@ -237,6 +329,173 @@ export async function updatePurchaseOrderStatus(params: {
         error instanceof Error
           ? error.message
           : "Ukendt fejl ved opdatering af leverandørordre-status.",
+    };
+  }
+}
+
+export async function updatePurchaseOrderLifecycle(params: {
+  purchaseOrderId: string;
+  action: "reopen" | "cancel" | "close";
+}): Promise<UpdatePurchaseOrderLifecycleResult> {
+  if (!params.purchaseOrderId || !params.action) {
+    return {
+      success: false,
+      source: "mock",
+      message: "Leverandørordre og handling skal vælges.",
+    };
+  }
+
+  if (!canUseLiveData()) {
+    return {
+      success: true,
+      source: "mock",
+      message: "Mock fallback: leverandørordren er opdateret.",
+    };
+  }
+
+  try {
+    const supabase = createAdminClient();
+    const { data: purchaseOrderLines, error: purchaseOrderLinesError } = await supabase
+      .from("purchase_order_lines")
+      .select("id, request_line_id")
+      .eq("purchase_order_id", params.purchaseOrderId);
+
+    if (purchaseOrderLinesError) {
+      return {
+        success: false,
+        source: "live",
+        message: purchaseOrderLinesError.message,
+      };
+    }
+
+    const requestLineIds = ((purchaseOrderLines ?? []) as PurchaseOrderLineStatusRow[]).map(
+      (line) => line.request_line_id
+    );
+
+    if (params.action === "reopen") {
+      const { error } = await supabase
+        .from("purchase_orders")
+        .update({
+          status: "draft",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", params.purchaseOrderId);
+
+      if (error) {
+        return {
+          success: false,
+          source: "live",
+          message: error.message,
+        };
+      }
+
+      return {
+        success: true,
+        source: "live",
+        message: "Leverandørordren er åbnet igen.",
+      };
+    }
+
+    if (params.action === "close") {
+      const { error } = await supabase
+        .from("purchase_orders")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", params.purchaseOrderId);
+
+      if (error) {
+        return {
+          success: false,
+          source: "live",
+          message: error.message,
+        };
+      }
+
+      return {
+        success: true,
+        source: "live",
+        message: "Leverandørordren er lukket og markeret som afgivet igen.",
+      };
+    }
+
+    const { data: requestLines, error: requestLinesError } = await supabase
+      .from("customer_order_request_lines")
+      .select("id, needs_action")
+      .in("id", requestLineIds);
+
+    if (requestLinesError) {
+      return {
+        success: false,
+        source: "live",
+        message: requestLinesError.message,
+      };
+    }
+
+    const { error: cancelOrderError } = await supabase
+      .from("purchase_orders")
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.purchaseOrderId);
+
+    if (cancelOrderError) {
+      return {
+        success: false,
+        source: "live",
+        message: cancelOrderError.message,
+      };
+    }
+
+    const { error: cancelPurchaseLinesError } = await supabase
+      .from("purchase_order_lines")
+      .update({
+        line_status: "cancelled",
+      })
+      .eq("purchase_order_id", params.purchaseOrderId);
+
+    if (cancelPurchaseLinesError) {
+      return {
+        success: false,
+        source: "live",
+        message: cancelPurchaseLinesError.message,
+      };
+    }
+
+    for (const line of (requestLines ?? []) as RequestLineRow[]) {
+      const nextLineStatus = line.needs_action ? "draft_needed" : "ready_for_purchase";
+
+      const { error: updateRequestLineError } = await supabase
+        .from("customer_order_request_lines")
+        .update({
+          line_status: nextLineStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", line.id);
+
+      if (updateRequestLineError) {
+        return {
+          success: false,
+          source: "live",
+          message: updateRequestLineError.message,
+        };
+      }
+    }
+
+    return {
+      success: true,
+      source: "live",
+      message: "Leverandørordren er annulleret. Linjerne kan nu indgå i en ny kladde.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      source: "live",
+      message:
+        error instanceof Error ? error.message : "Ukendt fejl ved opdatering af leverandørordre.",
     };
   }
 }
@@ -324,7 +583,7 @@ export async function undoSupplierOrderForRequest(params: {
     }
 
     const blockedStatuses = ((purchaseOrders ?? []) as PurchaseOrderStatusRow[]).filter(
-      (purchaseOrder) => !["draft", "ready_to_send", "sent"].includes(purchaseOrder.status)
+      (purchaseOrder) => !["draft", "sent", "ready_to_send"].includes(purchaseOrder.status)
     );
 
     if (blockedStatuses.length > 0) {

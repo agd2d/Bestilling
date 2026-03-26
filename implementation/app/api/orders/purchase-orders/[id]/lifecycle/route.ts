@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { isDevAuthBypassed } from "@/lib/env";
-import { createPurchaseOrderDraft } from "@/lib/orders/purchase-order-actions";
+import { updatePurchaseOrderLifecycle } from "@/lib/orders/purchase-order-actions";
 import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     let isAuthorized = false;
 
@@ -21,22 +24,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ikke autoriseret" }, { status: 401 });
     }
 
-    const body = (await request.json()) as {
-      supplierId?: string;
-      lineIds?: string[];
-      emailSubject?: string;
-      emailBody?: string;
-    };
+    const body = (await request.json()) as { action?: "reopen" | "cancel" | "close" };
+    const { id } = await context.params;
 
-    if (!body.supplierId || !body.lineIds?.length || !body.emailSubject || !body.emailBody) {
-      return NextResponse.json({ error: "Kladdeoplysninger mangler" }, { status: 400 });
+    if (!body.action || !["reopen", "cancel", "close"].includes(body.action)) {
+      return NextResponse.json({ error: "Ugyldig handling" }, { status: 400 });
     }
 
-    const result = await createPurchaseOrderDraft({
-      supplierId: body.supplierId,
-      lineIds: body.lineIds,
-      emailSubject: body.emailSubject,
-      emailBody: body.emailBody,
+    const result = await updatePurchaseOrderLifecycle({
+      purchaseOrderId: id,
+      action: body.action,
     });
 
     if (!result.success) {
@@ -47,7 +44,10 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Ukendt fejl ved oprettelse af leverandørordre",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Ukendt fejl ved opdatering af leverandørordre",
       },
       { status: 500 }
     );
