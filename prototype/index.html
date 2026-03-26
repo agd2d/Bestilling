@@ -48,8 +48,8 @@
           <div class="card-grid">
             <article class="metric-card">
               <span class="metric-label">Åbne kundebestillinger</span>
-              <strong class="metric-value">41</strong>
-              <span class="metric-meta">85 linjer fra Jotform er nu importeret</span>
+              <strong class="metric-value">40</strong>
+              <span class="metric-meta">Én bestilling er sendt videre til leverandørordre</span>
             </article>
             <article class="metric-card">
               <span class="metric-label">Linjer klar til bestilling</span>
@@ -441,13 +441,21 @@
                 </div>
                 <div class="action-list">
                   <div class="action-block">
+                    <strong>Flowknap</strong>
+                    <p>Når alle linjer er afklaret, kan bestillingen sendes til ordre. Hvis den allerede er sendt, kan den skubbes tilbage til varebestilling.</p>
+                    <div class="label-row">
+                      <button class="action-button" type="button">Send til ordre</button>
+                      <button class="action-button secondary" type="button">Tilbage til varebestilling</button>
+                    </div>
+                  </div>
+                  <div class="action-block">
                     <strong>Forslag til varekladde</strong>
                     <p>Varenummer `TR-99881` kan oprettes som ny vare under Total Rent.</p>
                     <button class="action-button">Godkend kladde</button>
                   </div>
                   <div class="action-block">
                     <strong>Næste flow</strong>
-                    <p>Når alle linjer er afklaret, kan de samles pr. leverandør og blive til en intern leverandørbestilling.</p>
+                    <p>Når alle linjer er afklaret, kan brugeren trykke "Send til ordre". Så forsvinder bestillingen fra varebestilling og flyttes til leverandørordre.</p>
                   </div>
                 </div>
               </article>
@@ -629,6 +637,22 @@
                     <p>4 linjer fra 2 kunder · modtaget ved kunden</p>
                   </div>
                   <button class="action-button goto-purchase-order-detail" type="button">Åbn ordre</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-header">
+                <h3>Kundebestillinger sendt til ordre</h3>
+                <span class="panel-meta">Kan sendes tilbage</span>
+              </div>
+              <div class="list">
+                <div class="list-item">
+                  <div>
+                    <strong>Enghaven Skole</strong>
+                    <p>Lokation på kunden - Enghaven Skole · flyttet fra varebestilling</p>
+                  </div>
+                  <button class="action-button goto-detail" type="button">Åbn og fortryd</button>
                 </div>
               </div>
             </article>

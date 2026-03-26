@@ -1,4 +1,5 @@
 import { hasEnv } from "@/lib/env";
+import { getOrdersListData } from "@/lib/orders/order-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   formatPurchaseOrderStatus,
@@ -100,6 +101,7 @@ interface RequestRow {
   id: string;
   customer_id: string;
   location_label: string;
+  status: string;
 }
 
 interface CustomerRow {
@@ -325,7 +327,7 @@ export async function getPurchaseDraftsData(): Promise<PurchaseDraftsResult> {
           "id, request_id, supplier_id, quantity, unit, resolved_product_number, resolved_product_name, raw_product_number, raw_product_name, line_status"
         )
         .eq("line_status", "ready_for_purchase"),
-      supabase.from("customer_order_requests").select("id, customer_id, location_label"),
+      supabase.from("customer_order_requests").select("id, customer_id, location_label, status"),
       supabase.from("customers").select("id, name"),
       supabase.from("suppliers").select("id, name, order_email, email"),
       supabase.from("purchase_order_lines").select("request_line_id"),
@@ -342,7 +344,11 @@ export async function getPurchaseDraftsData(): Promise<PurchaseDraftsResult> {
       };
     }
 
-    const requestMap = new Map((requests ?? []).map((request) => [request.id, request as RequestRow]));
+    const requestMap = new Map(
+      ((requests ?? []) as RequestRow[])
+        .filter((request) => request.status === "sent_to_supplier")
+        .map((request) => [request.id, request as RequestRow])
+    );
     const customerMap = new Map((customers ?? []).map((customer) => [customer.id, customer as CustomerRow]));
     const supplierMap = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier as SupplierRow]));
     const alreadyGrouped = new Set(
@@ -598,7 +604,7 @@ export async function getPurchaseOrderDetailData(
 
     const { data: requests, error: requestsError } = await supabase
       .from("customer_order_requests")
-      .select("id, customer_id, location_label")
+      .select("id, customer_id, location_label, status")
       .in("id", requestIds);
 
     if (requestsError) {

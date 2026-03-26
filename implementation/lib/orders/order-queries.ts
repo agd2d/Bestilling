@@ -205,10 +205,28 @@ function getMockNotes(): OrderNoteItem[] {
   }));
 }
 
-export async function getOrdersListData(): Promise<OrdersDataResult> {
+function filterOrdersByFlow(
+  orders: MockOrder[],
+  options?: { includeSentToOrder?: boolean; onlySentToOrder?: boolean }
+) {
+  if (options?.onlySentToOrder) {
+    return orders.filter((order) => order.rawStatus === "sent_to_supplier");
+  }
+
+  if (options?.includeSentToOrder) {
+    return orders;
+  }
+
+  return orders.filter((order) => order.rawStatus !== "sent_to_supplier");
+}
+
+export async function getOrdersListData(options?: {
+  includeSentToOrder?: boolean;
+  onlySentToOrder?: boolean;
+}): Promise<OrdersDataResult> {
   if (!canUseLiveData()) {
     return {
-      orders: mockOrders,
+      orders: filterOrdersByFlow(mockOrders, options),
       notes: getMockNotes(),
       availableLabels: defaultOrderLabels,
       availableProducts: mockProducts,
@@ -259,7 +277,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
 
     if (firstError) {
       return {
-        orders: mockOrders,
+        orders: filterOrdersByFlow(mockOrders, options),
         notes: getMockNotes(),
         availableLabels: defaultOrderLabels,
         availableProducts: mockProducts,
@@ -270,16 +288,17 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
     }
 
     const supplierRows = (suppliers ?? []) as SupplierRow[];
+    const builtOrders = buildLiveOrders({
+      requests: (requests ?? []) as OrderRequestRow[],
+      customers: (customers ?? []) as CustomerRow[],
+      lines: (lines ?? []) as RequestLineRow[],
+      suppliers: supplierRows,
+      labels: (labels ?? []) as LabelRow[],
+      requestLabels: (requestLabels ?? []) as RequestLabelRow[],
+    });
 
     return {
-      orders: buildLiveOrders({
-        requests: (requests ?? []) as OrderRequestRow[],
-        customers: (customers ?? []) as CustomerRow[],
-        lines: (lines ?? []) as RequestLineRow[],
-        suppliers: supplierRows,
-        labels: (labels ?? []) as LabelRow[],
-        requestLabels: (requestLabels ?? []) as RequestLabelRow[],
-      }),
+      orders: filterOrdersByFlow(builtOrders, options),
       notes: buildLiveNotes((notes ?? []) as OrderNoteRow[]),
       availableLabels: ((labels ?? []) as LabelRow[]).map((label) => ({
         id: label.id,
@@ -296,7 +315,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
     };
   } catch (error) {
     return {
-      orders: mockOrders,
+      orders: filterOrdersByFlow(mockOrders, options),
       notes: getMockNotes(),
       availableLabels: defaultOrderLabels,
       availableProducts: mockProducts,
@@ -311,7 +330,7 @@ export async function getOrdersListData(): Promise<OrdersDataResult> {
 }
 
 export async function getOrderByIdData(id: string) {
-  const result = await getOrdersListData();
+  const result = await getOrdersListData({ includeSentToOrder: true });
   const order = result.orders.find((item) => item.id === id) ?? null;
   const notes = result.notes.filter((note) => note.requestId === id);
 

@@ -7,7 +7,6 @@ export default async function OrdersPage() {
   const totalLines = orders.reduce((sum, order) => sum + order.lineCount, 0);
   const actionOrders = orders.filter((order) => order.actionRequiredCount > 0);
   const actionLines = orders.reduce((sum, order) => sum + order.actionRequiredCount, 0);
-  const openOrders = orders.filter((order) => order.rawStatus !== "sent_to_supplier");
   const readyLines = orders.flatMap((order) =>
     order.lines.filter((line) => line.status.toLowerCase().includes("klar"))
   ).length;
@@ -37,15 +36,16 @@ export default async function OrdersPage() {
         <p className="code">/orders</p>
         <h1>Varebestilling</h1>
         <p>
-          Her arbejder varebestilleren direkte med de importerede Jotform-bestillinger.
-          Overblikket henter live data fra Supabase og viser, hvad der er klar til
-          videre bestilling, og hvad der stadig kræver handling.
+          Her arbejder varebestilleren direkte med de importerede Jotform-bestillinger. Kun
+          bestillinger, som stadig er i varebestilling, vises her. Når en bestilling godkendes
+          med knappen "Send til ordre", flyttes den ud af denne liste og videre til{" "}
+          <Link href="/purchase-orders">Leverandørordre</Link>.
         </p>
 
         <div className="grid">
           <article className="card">
             <strong>Åbne bestillinger</strong>
-            <p className="metric-inline">{openOrders.length}</p>
+            <p className="metric-inline">{orders.length}</p>
             <p className="metric-subtext">{totalLines} linjer i alt</p>
           </article>
           <article className="card">
@@ -100,8 +100,8 @@ export default async function OrdersPage() {
         <article className="card">
           <div className="card-header">
             <div>
-              <p className="kicker">Ugens kladder</p>
-              <h2>Klar til leverandør</h2>
+              <p className="kicker">Klar til næste flow</p>
+              <h2>Send til ordre</h2>
             </div>
             <span className="pill neutral">{supplierSummary.length} leverandører</span>
           </div>
@@ -115,7 +115,7 @@ export default async function OrdersPage() {
                 <span className={`pill ${supplier.actionCount > 0 ? "warning" : "success"}`}>
                   {supplier.actionCount > 0
                     ? `${supplier.actionCount} kræver afklaring`
-                    : "Klar til kladde"}
+                    : "Klar til Send til ordre"}
                 </span>
               </div>
             ))}

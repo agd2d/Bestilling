@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import OrderFlowButton from "@/components/OrderFlowButton";
 import OrderLabelsPanel from "@/components/OrderLabelsPanel";
 import OrderLinesEditor from "@/components/OrderLinesEditor";
 import OrderNotesPanel from "@/components/OrderNotesPanel";
@@ -53,9 +54,20 @@ export default async function OrderDetailPage({
           ))}
         </div>
         {message && <p>{message}</p>}
-        <OrderStatusSelect orderId={order.id} currentStatus={order.rawStatus} />
+
+        <div className="two-grid">
+          <OrderFlowButton orderId={order.id} currentStatus={order.rawStatus} />
+          <OrderStatusSelect orderId={order.id} currentStatus={order.rawStatus} />
+        </div>
+
         <p>
-          <Link href="/orders">Tilbage til ordreoversigt</Link>
+          <Link href="/orders">Tilbage til varebestilling</Link>
+          {order.rawStatus === "sent_to_supplier" ? (
+            <>
+              {" · "}
+              <Link href="/purchase-orders">Vis i leverandørordre</Link>
+            </>
+          ) : null}
         </p>
       </section>
 

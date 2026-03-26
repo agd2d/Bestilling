@@ -1,6 +1,7 @@
 import Link from "next/link";
 import CreatePurchaseOrderButton from "@/components/CreatePurchaseOrderButton";
 import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
+import { getOrdersListData } from "@/lib/orders/order-queries";
 import {
   getPurchaseDraftsData,
   getSavedPurchaseOrdersData,
@@ -18,9 +19,10 @@ function formatDateTime(value: string | null) {
 }
 
 export default async function PurchaseOrdersPage() {
-  const [draftResult, savedResult] = await Promise.all([
+  const [draftResult, savedResult, stagedOrdersResult] = await Promise.all([
     getPurchaseDraftsData(),
     getSavedPurchaseOrdersData(),
+    getOrdersListData({ onlySentToOrder: true }),
   ]);
 
   const totalDraftLines = draftResult.groups.reduce((sum, group) => sum + group.lineCount, 0);
@@ -154,6 +156,32 @@ export default async function PurchaseOrdersPage() {
                     />
                   </div>
                 </article>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="card">
+          <div className="card-header">
+            <div>
+              <p className="kicker">Sendt fra varebestilling</p>
+              <h2>Kundebestillinger i ordre-kø</h2>
+            </div>
+            <span className="pill neutral">{stagedOrdersResult.orders.length} bestillinger</span>
+          </div>
+
+          {stagedOrdersResult.orders.length === 0 ? (
+            <p className="muted">Ingen kundebestillinger er sendt til ordre endnu.</p>
+          ) : (
+            <div className="insight-list">
+              {stagedOrdersResult.orders.map((order) => (
+                <Link href={`/orders/${order.id}`} key={order.id} className="insight-row">
+                  <div>
+                    <strong>{order.customerName}</strong>
+                    <p>{order.locationLabel}</p>
+                  </div>
+                  <span className="pill warning">Tilbage mulig</span>
+                </Link>
               ))}
             </div>
           )}
