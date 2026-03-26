@@ -8,6 +8,8 @@ import OrderStatusSelect from "@/components/OrderStatusSelect";
 import { getLabelTone } from "@/lib/orders/order-labels";
 import { getOrderByIdData } from "@/lib/orders/order-queries";
 
+export const dynamic = "force-dynamic";
+
 function pillClass(status: string) {
   const normalized = status.toLowerCase();
   if (normalized.includes("handling") || normalized.includes("kladde")) {

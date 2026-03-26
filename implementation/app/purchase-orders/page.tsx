@@ -7,6 +7,8 @@ import {
   getSavedPurchaseOrdersData,
 } from "@/lib/orders/purchase-order-queries";
 
+export const dynamic = "force-dynamic";
+
 function formatDateTime(value: string | null) {
   if (!value) {
     return "Ikke registreret endnu";

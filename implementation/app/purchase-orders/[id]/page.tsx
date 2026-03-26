@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
 import { getPurchaseOrderDetailData } from "@/lib/orders/purchase-order-queries";
 
+export const dynamic = "force-dynamic";
+
 function formatDateTime(value: string | null) {
   if (!value) {
     return "Ikke registreret endnu";

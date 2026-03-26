@@ -2,6 +2,8 @@ import Link from "next/link";
 import OrdersOverviewTable from "@/components/OrdersOverviewTable";
 import { getOrdersListData } from "@/lib/orders/order-queries";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrdersPage() {
   const { orders, source, message } = await getOrdersListData();
   const totalLines = orders.reduce((sum, order) => sum + order.lineCount, 0);
