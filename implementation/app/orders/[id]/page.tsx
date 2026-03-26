@@ -5,6 +5,7 @@ import OrderLabelsPanel from "@/components/OrderLabelsPanel";
 import OrderLinesEditor from "@/components/OrderLinesEditor";
 import OrderNotesPanel from "@/components/OrderNotesPanel";
 import OrderStatusSelect from "@/components/OrderStatusSelect";
+import UndoSupplierOrderButton from "@/components/UndoSupplierOrderButton";
 import { getLabelTone } from "@/lib/orders/order-labels";
 import { getOrderByIdData } from "@/lib/orders/order-queries";
 
@@ -70,6 +71,7 @@ export default async function OrderDetailPage({
                 Denne ordre kan ikke sendes tilbage til kundebestillinger, fordi en eller flere
                 linjer allerede indgår i en leverandørordre.
               </p>
+              <UndoSupplierOrderButton orderId={order.id} />
             </div>
           ) : (
             <OrderFlowButton orderId={order.id} currentStatus={order.rawStatus} />
