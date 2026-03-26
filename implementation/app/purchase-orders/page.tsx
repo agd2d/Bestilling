@@ -1,6 +1,7 @@
 import Link from "next/link";
 import CreatePurchaseOrderButton from "@/components/CreatePurchaseOrderButton";
 import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
+import SupplierMailButton from "@/components/SupplierMailButton";
 import { getOrdersListData } from "@/lib/orders/order-queries";
 import {
   getPurchaseDraftsData,
@@ -247,13 +248,20 @@ export default async function PurchaseOrdersPage() {
                   </tbody>
                 </table>
 
-                <div className="purchase-actions-bar">
-                  <CreatePurchaseOrderButton
-                    supplierId={group.supplierId}
-                    lineIds={group.lines.map((line) => line.requestLineId)}
-                    emailSubject={group.emailSubject}
-                    emailBody={group.emailBody}
-                  />
+                  <div className="purchase-actions-bar">
+                  <div className="button-row">
+                    <CreatePurchaseOrderButton
+                      supplierId={group.supplierId}
+                      lineIds={group.lines.map((line) => line.requestLineId)}
+                      emailSubject={group.emailSubject}
+                      emailBody={group.emailBody}
+                    />
+                    <SupplierMailButton
+                      to={group.supplierEmail}
+                      subject={group.emailSubject}
+                      body={group.emailBody}
+                    />
+                  </div>
                 </div>
 
                 <div className="two-grid">

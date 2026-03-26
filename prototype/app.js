@@ -5,6 +5,7 @@ const titleMap = {
   "impl-orders": "Implementation ordrevisning",
   "purchase-orders": "Leverandørordre",
   "purchase-order-detail": "Leverandørordre detalje",
+  suppliers: "Leverandører",
   "customer-invoicing": "Fakturering til kunde",
   inbox: "Mailindbakke",
   products: "Varekatalog",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
+import SupplierMailButton from "@/components/SupplierMailButton";
 import { getPurchaseOrderDetailData } from "@/lib/orders/purchase-order-queries";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,15 @@ export default async function PurchaseOrderDetailPage({
               <p className="table-meta">Afsendt: {formatDateTime(purchaseOrder.sentAt)}</p>
               {purchaseOrder.emailSubject ? (
                 <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p>
+              ) : null}
+              {purchaseOrder.emailBody && purchaseOrder.emailSubject ? (
+                <div className="purchase-actions-bar">
+                  <SupplierMailButton
+                    to={purchaseOrder.supplierEmail}
+                    subject={purchaseOrder.emailSubject}
+                    body={purchaseOrder.emailBody}
+                  />
+                </div>
               ) : null}
             </div>
             <PurchaseOrderStatusSelect

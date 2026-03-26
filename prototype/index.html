@@ -21,6 +21,7 @@
           <button class="nav-link" data-view="request-detail">Ordredetalje</button>
           <button class="nav-link" data-view="impl-orders">Implementation ordrevisning</button>
           <button class="nav-link" data-view="purchase-orders">Leverandørordre</button>
+          <button class="nav-link" data-view="suppliers">Leverandører</button>
           <button class="nav-link" data-view="customer-invoicing">Fakturering til kunde</button>
           <button class="nav-link" data-view="inbox">Mailindbakke</button>
           <button class="nav-link" data-view="products">Varekatalog</button>
@@ -821,6 +822,52 @@
               <div class="action-block">
                 <strong>Mailtekst</strong>
                 <p>Leverandørordren gemmer nu også den tekst, der blev sendt eller skal sendes til leverandøren.</p>
+              </div>
+              <div class="action-block">
+                <strong>Ordre-mail</strong>
+                <p>Ordre-mailen sendes til leverandørens ordre-e-mail fra leverandørkartoteket, fx `kundeservice@totalrent.dk`.</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="view-suppliers">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Leverandører</h3>
+              <span class="panel-meta">Selvstændig menu</span>
+            </div>
+            <div class="list">
+              <div class="list-item">
+                <div>
+                  <strong>Total Rent</strong>
+                  <p>Ordre: kundeservice@totalrent.dk · Bekræftelse: kundeservice@totalrent.dk · Levering: lager2@totalrent.dk</p>
+                </div>
+                <span class="status-pill success">Aktiv</span>
+              </div>
+              <div class="list-item">
+                <div>
+                  <strong>Abena</strong>
+                  <p>Ordre: ordre@abena.dk · Bekræftelse: ordre@abena.dk</p>
+                </div>
+                <span class="status-pill success">Aktiv</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Mailkilde til leverandørordre</h3>
+              <span class="panel-meta">Koblet til ordre-mail</span>
+            </div>
+            <div class="action-list">
+              <div class="action-block">
+                <strong>Ordre-e-mail</strong>
+                <p>Feltet `ordre-e-mail` bruges direkte af knappen "Send ordre-mail" i leverandørordre.</p>
+              </div>
+              <div class="action-block">
+                <strong>Bekræftelse og levering</strong>
+                <p>De separate felter bruges senere til automatisk matching af ordrebekræftelser og leveringsmails.</p>
               </div>
             </div>
           </article>
