@@ -166,6 +166,14 @@ export default async function PurchaseOrdersPage() {
                         purchaseOrderId={purchaseOrder.id}
                         currentStatus={purchaseOrder.status}
                       />
+                      {purchaseOrder.emailSubject ? (
+                        <SupplierMailButton
+                          to={purchaseOrder.supplierEmail}
+                          subject={purchaseOrder.emailSubject}
+                          body={`Ordrenummer: ${purchaseOrder.orderNumber}`}
+                          purchaseOrderId={purchaseOrder.id}
+                        />
+                      ) : null}
                     </div>
                   </div>
                 </article>

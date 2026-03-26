@@ -89,6 +89,7 @@ export default async function PurchaseOrderDetailPage({
                     to={purchaseOrder.supplierEmail}
                     subject={purchaseOrder.emailSubject}
                     body={purchaseOrder.emailBody}
+                    purchaseOrderId={purchaseOrder.id}
                   />
                 </div>
               ) : null}

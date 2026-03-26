@@ -17,6 +17,10 @@ export function getEnvStatus() {
     "SUPABASE_SERVICE_ROLE_KEY",
     "JOTFORM_API_KEY",
     "ORDERS_JOTFORM_FORM_ID",
+    "MICROSOFT_GRAPH_TENANT_ID",
+    "MICROSOFT_GRAPH_CLIENT_ID",
+    "MICROSOFT_GRAPH_CLIENT_SECRET",
+    "MICROSOFT_GRAPH_SENDER_USER_ID",
   ] as const;
 
   return keys.map((key) => ({

@@ -1,4 +1,5 @@
 import { hasEnv } from "@/lib/env";
+import { hasMicrosoftGraphMailConfig, sendMailViaMicrosoftGraph } from "@/lib/mail/microsoft-graph";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { PurchaseOrderStatusValue } from "@/lib/orders/purchase-order-status-options";
 
@@ -22,6 +23,12 @@ export interface UpdatePurchaseOrderLifecycleResult {
 }
 
 export interface UndoSupplierOrderResult {
+  success: boolean;
+  source: "live" | "mock";
+  message: string;
+}
+
+export interface SendPurchaseOrderMailResult {
   success: boolean;
   source: "live" | "mock";
   message: string;
@@ -55,6 +62,21 @@ interface PurchaseOrderStatusRow {
 interface PurchaseOrderLineStatusRow {
   id: string;
   request_line_id: string;
+}
+
+interface SendPurchaseOrderRow {
+  id: string;
+  status: string;
+  email_subject: string | null;
+  email_body: string | null;
+  supplier_id: string;
+}
+
+interface SendSupplierRow {
+  id: string;
+  name: string;
+  order_email: string | null;
+  email: string | null;
 }
 
 function canUseLiveData() {
@@ -687,6 +709,122 @@ export async function undoSupplierOrderForRequest(params: {
       source: "live",
       message:
         error instanceof Error ? error.message : "Ukendt fejl ved fortrydelse af leverandørordre.",
+    };
+  }
+}
+
+export async function sendPurchaseOrderMail(params: {
+  purchaseOrderId: string;
+}): Promise<SendPurchaseOrderMailResult> {
+  if (!params.purchaseOrderId) {
+    return {
+      success: false,
+      source: "mock",
+      message: "Leverandørordren mangler id.",
+    };
+  }
+
+  if (!canUseLiveData()) {
+    return {
+      success: false,
+      source: "mock",
+      message: "Live miljø mangler stadig for rigtig mailafsendelse.",
+    };
+  }
+
+  if (!hasMicrosoftGraphMailConfig()) {
+    return {
+      success: false,
+      source: "live",
+      message: "Microsoft Graph er ikke konfigureret endnu for direkte mailafsendelse.",
+    };
+  }
+
+  try {
+    const supabase = createAdminClient();
+    const { data: purchaseOrder, error: purchaseOrderError } = await supabase
+      .from("purchase_orders")
+      .select("id, status, email_subject, email_body, supplier_id")
+      .eq("id", params.purchaseOrderId)
+      .maybeSingle();
+
+    if (purchaseOrderError || !purchaseOrder) {
+      return {
+        success: false,
+        source: "live",
+        message: purchaseOrderError?.message ?? "Leverandørordren blev ikke fundet.",
+      };
+    }
+
+    const order = purchaseOrder as SendPurchaseOrderRow;
+    const { data: supplier, error: supplierError } = await supabase
+      .from("suppliers")
+      .select("id, name, order_email, email")
+      .eq("id", order.supplier_id)
+      .maybeSingle();
+
+    if (supplierError || !supplier) {
+      return {
+        success: false,
+        source: "live",
+        message: supplierError?.message ?? "Leverandøren blev ikke fundet.",
+      };
+    }
+
+    const supplierRow = supplier as SendSupplierRow;
+    const to = supplierRow.order_email ?? supplierRow.email;
+
+    if (!to) {
+      return {
+        success: false,
+        source: "live",
+        message: "Leverandøren mangler ordre-e-mail.",
+      };
+    }
+
+    if (!order.email_subject || !order.email_body) {
+      return {
+        success: false,
+        source: "live",
+        message: "Ordren mangler mail-emne eller mail-tekst.",
+      };
+    }
+
+    await sendMailViaMicrosoftGraph({
+      to,
+      subject: order.email_subject,
+      body: order.email_body,
+    });
+
+    const nextStatus = order.status === "draft" ? "sent" : order.status;
+    const { error: updateError } = await supabase
+      .from("purchase_orders")
+      .update({
+        status: nextStatus,
+        sent_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.purchaseOrderId);
+
+    if (updateError) {
+      return {
+        success: false,
+        source: "live",
+        message: updateError.message,
+      };
+    }
+
+    return {
+      success: true,
+      source: "live",
+      message: `Ordre-mail er sendt til ${supplierRow.name}.`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      source: "live",
+      message:
+        error instanceof Error ? error.message : "Ukendt fejl ved afsendelse af leverandørmail.",
     };
   }
 }
