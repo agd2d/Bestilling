@@ -15,11 +15,21 @@ export default function OrderFlowButton({
   const [isPending, startTransition] = useTransition();
 
   const sendToOrder = currentStatus !== 'sent_to_supplier';
-  const buttonLabel = sendToOrder ? 'Send til ordre' : 'Tilbage til varebestilling';
+  const buttonLabel = sendToOrder ? 'Send til ordre' : 'Send ordre tilbage til kundebestillinger';
   const targetStatus = sendToOrder ? 'sent_to_supplier' : 'created';
 
   async function handleClick() {
     setMessage(null);
+
+    if (!sendToOrder) {
+      const confirmed = window.confirm(
+        'Er du sikker på, at ordren skal sendes tilbage til kundebestillinger?'
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
 
     const response = await fetch(`/api/orders/requests/${orderId}/flow`, {
       method: 'POST',

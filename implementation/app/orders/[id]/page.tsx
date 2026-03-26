@@ -63,13 +63,11 @@ export default async function OrderDetailPage({
         </div>
 
         <p>
-          <Link href="/orders">Tilbage til varebestilling</Link>
           {order.rawStatus === "sent_to_supplier" ? (
-            <>
-              {" · "}
-              <Link href="/purchase-orders">Vis i leverandørordre</Link>
-            </>
-          ) : null}
+            <Link href="/purchase-orders">Vis i leverandørordre</Link>
+          ) : (
+            <Link href="/orders">Tilbage til varebestilling</Link>
+          )}
         </p>
       </section>
 
