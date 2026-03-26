@@ -4,7 +4,6 @@ import OrderFlowButton from "@/components/OrderFlowButton";
 import OrderLabelsPanel from "@/components/OrderLabelsPanel";
 import OrderLinesEditor from "@/components/OrderLinesEditor";
 import OrderNotesPanel from "@/components/OrderNotesPanel";
-import OrderStatusSelect from "@/components/OrderStatusSelect";
 import UndoSupplierOrderButton from "@/components/UndoSupplierOrderButton";
 import { getLabelTone } from "@/lib/orders/order-labels";
 import { getOrderByIdData } from "@/lib/orders/order-queries";
@@ -62,23 +61,6 @@ export default async function OrderDetailPage({
         </div>
         {message && <p>{message}</p>}
 
-        <div className="two-grid">
-          {lockedInSupplierOrder ? (
-            <div className="card nested-card">
-              <p className="kicker">Flow</p>
-              <h3>Ordren er låst i leverandørordre</h3>
-              <p className="muted">
-                Denne ordre kan ikke sendes tilbage til kundebestillinger, fordi en eller flere
-                linjer allerede indgår i en leverandørordre.
-              </p>
-              <UndoSupplierOrderButton orderId={order.id} />
-            </div>
-          ) : (
-            <OrderFlowButton orderId={order.id} currentStatus={order.rawStatus} />
-          )}
-          <OrderStatusSelect orderId={order.id} currentStatus={order.rawStatus} />
-        </div>
-
         <p>
           {order.rawStatus === "sent_to_supplier" ? (
             <Link href="/purchase-orders">Vis i leverandørordre</Link>
@@ -103,6 +85,35 @@ export default async function OrderDetailPage({
             source={source}
           />
           <OrderNotesPanel requestId={order.id} notes={notes} source={source} />
+        </div>
+
+        <div className="card">
+          <p className="kicker">Flow</p>
+          <div className="flow-action-stack">
+            {lockedInSupplierOrder ? (
+              <>
+                <div>
+                  <h2>Ordren er låst i leverandørordre</h2>
+                  <p className="muted">
+                    Denne ordre kan ikke sendes direkte tilbage, fordi en eller flere linjer allerede
+                    indgår i en leverandørordre.
+                  </p>
+                </div>
+                <UndoSupplierOrderButton orderId={order.id} />
+              </>
+            ) : (
+              <>
+                <div>
+                  <h2>Klar til næste trin</h2>
+                  <p className="muted">
+                    Når ordrelinjerne er på plads, kan kundebestillingen sendes videre til
+                    leverandørordre.
+                  </p>
+                </div>
+                <OrderFlowButton orderId={order.id} currentStatus={order.rawStatus} />
+              </>
+            )}
+          </div>
         </div>
       </section>
     </main>

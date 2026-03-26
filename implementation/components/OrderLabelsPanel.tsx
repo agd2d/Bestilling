@@ -63,7 +63,7 @@ export default function OrderLabelsPanel({
         </span>
       </div>
 
-      <div className="label-selector-grid">
+      <div className="label-chip-grid">
         {availableLabels.map((label) => {
           const isSelected = selected.includes(label.name);
 
@@ -71,14 +71,11 @@ export default function OrderLabelsPanel({
             <button
               key={label.id}
               type="button"
-              className={`label-toggle ${isSelected ? 'selected' : ''}`}
+              className={`label-chip-button ${isSelected ? 'selected' : ''}`}
               onClick={() => void toggleLabel(label)}
               disabled={isPending}
             >
               <span className={`pill ${getLabelTone(label.name, label.color)}`}>{label.name}</span>
-              <span className="label-toggle-meta">
-                {isSelected ? 'Valgt på ordren' : 'Klik for at tilføje'}
-              </span>
             </button>
           );
         })}
