@@ -35,6 +35,10 @@ export default async function OrderDetailPage({
 
   if (!order) notFound();
 
+  const lockedInSupplierOrder =
+    order.rawStatus === "sent_to_supplier" &&
+    order.lines.some((line) => line.rawStatus === "included_in_purchase_order");
+
   return (
     <main className="page-shell">
       <section className="hero">
@@ -58,7 +62,18 @@ export default async function OrderDetailPage({
         {message && <p>{message}</p>}
 
         <div className="two-grid">
-          <OrderFlowButton orderId={order.id} currentStatus={order.rawStatus} />
+          {lockedInSupplierOrder ? (
+            <div className="card nested-card">
+              <p className="kicker">Flow</p>
+              <h3>Ordren er låst i leverandørordre</h3>
+              <p className="muted">
+                Denne ordre kan ikke sendes tilbage til kundebestillinger, fordi en eller flere
+                linjer allerede indgår i en leverandørordre.
+              </p>
+            </div>
+          ) : (
+            <OrderFlowButton orderId={order.id} currentStatus={order.rawStatus} />
+          )}
           <OrderStatusSelect orderId={order.id} currentStatus={order.rawStatus} />
         </div>
 
