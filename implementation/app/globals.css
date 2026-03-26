@@ -507,6 +507,10 @@ a {
   color: #6b6f68;
 }
 
+.table-wrap {
+  overflow-x: auto;
+}
+
 .mail-draft-box {
   margin: 0;
   padding: 14px;

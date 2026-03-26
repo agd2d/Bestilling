@@ -4,6 +4,7 @@ const navItems = [
   { href: "/", label: "Overblik" },
   { href: "/orders", label: "Varebestilling" },
   { href: "/purchase-orders", label: "Leverandørordre" },
+  { href: "/products", label: "Varekatalog" },
   { href: "/suppliers", label: "Leverandører" },
   { href: "/customer-invoicing", label: "Fakturering til kunde" },
 ];
