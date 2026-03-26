@@ -1,11 +1,18 @@
 import { hasEnv } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/server";
+import type { PurchaseOrderStatusValue } from "@/lib/orders/purchase-order-status-options";
 
 export interface CreatePurchaseOrderDraftResult {
   success: boolean;
   source: "live" | "mock";
   message: string;
   purchaseOrderId?: string;
+}
+
+export interface UpdatePurchaseOrderStatusResult {
+  success: boolean;
+  source: "live" | "mock";
+  message: string;
 }
 
 interface RequestLineRow {
@@ -54,9 +61,10 @@ export async function createPurchaseOrderDraft(params: {
       .from("purchase_orders")
       .insert({
         supplier_id: params.supplierId,
-        status: "draft",
+        status: "sent",
         email_subject: params.emailSubject,
         email_body: params.emailBody,
+        sent_at: new Date().toISOString(),
       })
       .select("id")
       .single();
@@ -65,7 +73,7 @@ export async function createPurchaseOrderDraft(params: {
       return {
         success: false,
         source: "live",
-        message: purchaseOrderError?.message ?? "Leverandørkladden kunne ikke oprettes.",
+        message: purchaseOrderError?.message ?? "Leverandørordren kunne ikke oprettes.",
       };
     }
 
@@ -112,7 +120,7 @@ export async function createPurchaseOrderDraft(params: {
         customer_id: requestCustomerMap.get(line.request_id),
         quantity: line.quantity,
         unit: line.unit,
-        line_status: "draft",
+        line_status: "sent",
       }))
     );
 
@@ -143,7 +151,7 @@ export async function createPurchaseOrderDraft(params: {
     return {
       success: true,
       source: "live",
-      message: "Leverandørkladden er gemt.",
+      message: "Leverandørordren er oprettet som afsendt.",
       purchaseOrderId,
     };
   } catch (error) {
@@ -151,7 +159,66 @@ export async function createPurchaseOrderDraft(params: {
       success: false,
       source: "live",
       message:
-        error instanceof Error ? error.message : "Ukendt fejl ved oprettelse af leverandørkladde.",
+        error instanceof Error ? error.message : "Ukendt fejl ved oprettelse af leverandørordre.",
+    };
+  }
+}
+
+export async function updatePurchaseOrderStatus(params: {
+  purchaseOrderId: string;
+  status: PurchaseOrderStatusValue;
+}): Promise<UpdatePurchaseOrderStatusResult> {
+  if (!params.purchaseOrderId || !params.status) {
+    return {
+      success: false,
+      source: "mock",
+      message: "Leverandørordre og status skal vælges.",
+    };
+  }
+
+  if (!canUseLiveData()) {
+    return {
+      success: true,
+      source: "mock",
+      message: "Mock fallback: status er ikke skrevet til databasen endnu.",
+    };
+  }
+
+  try {
+    const supabase = createAdminClient();
+    const nextTimestamp =
+      params.status === "sent" ? { sent_at: new Date().toISOString() } : {};
+
+    const { error } = await supabase
+      .from("purchase_orders")
+      .update({
+        status: params.status,
+        updated_at: new Date().toISOString(),
+        ...nextTimestamp,
+      })
+      .eq("id", params.purchaseOrderId);
+
+    if (error) {
+      return {
+        success: false,
+        source: "live",
+        message: error.message,
+      };
+    }
+
+    return {
+      success: true,
+      source: "live",
+      message: "Leverandørordre-status er opdateret.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      source: "live",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Ukendt fejl ved opdatering af leverandørordre-status.",
     };
   }
 }

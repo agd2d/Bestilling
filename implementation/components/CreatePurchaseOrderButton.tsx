@@ -37,11 +37,11 @@ export default function CreatePurchaseOrderButton({
     const data = (await response.json()) as { message?: string; error?: string };
 
     if (!response.ok) {
-      setMessage(data.error ?? 'Kladde kunne ikke gemmes');
+      setMessage(data.error ?? 'Leverandørordre kunne ikke gemmes');
       return;
     }
 
-    setMessage(data.message ?? 'Kladde gemt');
+    setMessage(data.message ?? 'Leverandørordre gemt');
     startTransition(() => {
       router.refresh();
     });
@@ -50,7 +50,7 @@ export default function CreatePurchaseOrderButton({
   return (
     <div className="purchase-action-wrap">
       <button type="button" className="button" onClick={() => void createDraft()} disabled={isPending}>
-        {isPending ? 'Gemmer kladde...' : 'Gem som purchase order'}
+        {isPending ? 'Opretter leverandørordre...' : 'Opret leverandørordre'}
       </button>
       {message ? <p className="table-meta">{message}</p> : null}
     </div>

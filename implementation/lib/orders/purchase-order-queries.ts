@@ -1,5 +1,9 @@
 import { hasEnv } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/server";
+import {
+  formatPurchaseOrderStatus,
+  purchaseOrderStatusTone,
+} from "@/lib/orders/purchase-order-status-options";
 
 export interface PurchaseDraftLine {
   requestLineId: string;
@@ -24,6 +28,26 @@ export interface PurchaseDraftGroup {
 
 export interface PurchaseDraftsResult {
   groups: PurchaseDraftGroup[];
+  source: "live" | "mock";
+  message?: string;
+}
+
+export interface SavedPurchaseOrderCard {
+  id: string;
+  supplierName: string;
+  supplierEmail: string | null;
+  status: string;
+  statusLabel: string;
+  statusTone: string;
+  lineCount: number;
+  customerCount: number;
+  createdAt: string;
+  sentAt: string | null;
+  emailSubject: string | null;
+}
+
+export interface SavedPurchaseOrdersResult {
+  purchaseOrders: SavedPurchaseOrderCard[];
   source: "live" | "mock";
   message?: string;
 }
@@ -59,8 +83,19 @@ interface SupplierRow {
   email: string | null;
 }
 
+interface PurchaseOrderRow {
+  id: string;
+  supplier_id: string;
+  status: string;
+  email_subject: string | null;
+  created_at: string;
+  sent_at: string | null;
+}
+
 interface PurchaseOrderLineRow {
+  purchase_order_id: string;
   request_line_id: string;
+  customer_id: string;
 }
 
 const mockDrafts: PurchaseDraftGroup[] = [
@@ -101,6 +136,35 @@ const mockDrafts: PurchaseDraftGroup[] = [
     ],
     emailSubject: "Bestilling fra Hvidbjerg Service - Total Rent",
     emailBody: "",
+  },
+];
+
+const mockSavedPurchaseOrders: SavedPurchaseOrderCard[] = [
+  {
+    id: "po-mock-1",
+    supplierName: "Total Rent",
+    supplierEmail: "kundeservice@totalrent.dk",
+    status: "ready_to_send",
+    statusLabel: formatPurchaseOrderStatus("ready_to_send"),
+    statusTone: purchaseOrderStatusTone("ready_to_send"),
+    lineCount: 12,
+    customerCount: 4,
+    createdAt: "2026-03-26T08:30:00.000Z",
+    sentAt: "2026-03-26T08:35:00.000Z",
+    emailSubject: "Bestilling fra Hvidbjerg Service - Total Rent",
+  },
+  {
+    id: "po-mock-2",
+    supplierName: "Abena",
+    supplierEmail: "ordre@abena.dk",
+    status: "completed",
+    statusLabel: formatPurchaseOrderStatus("completed"),
+    statusTone: purchaseOrderStatusTone("completed"),
+    lineCount: 6,
+    customerCount: 2,
+    createdAt: "2026-03-25T13:20:00.000Z",
+    sentAt: "2026-03-25T13:30:00.000Z",
+    emailSubject: "Bestilling fra Hvidbjerg Service - Abena",
   },
 ];
 
@@ -237,6 +301,103 @@ export async function getPurchaseDraftsData(): Promise<PurchaseDraftsResult> {
   } catch (error) {
     return {
       groups: mockDrafts.map((group) => withEmailDraft(group)),
+      source: "mock",
+      message:
+        error instanceof Error
+          ? `Live læsning fejlede: ${error.message}. Mockdata vises i stedet.`
+          : "Live læsning fejlede. Mockdata vises i stedet.",
+    };
+  }
+}
+
+export async function getSavedPurchaseOrdersData(params?: {
+  status?: string;
+}): Promise<SavedPurchaseOrdersResult> {
+  const filteredMock = params?.status
+    ? mockSavedPurchaseOrders.filter((purchaseOrder) => purchaseOrder.status === params.status)
+    : mockSavedPurchaseOrders;
+
+  if (!canUseLiveData()) {
+    return {
+      purchaseOrders: filteredMock,
+      source: "mock",
+      message: "Miljøvariabler mangler stadig, derfor vises mockdata.",
+    };
+  }
+
+  try {
+    const supabase = createAdminClient();
+    let purchaseOrdersQuery = supabase
+      .from("purchase_orders")
+      .select("id, supplier_id, status, email_subject, created_at, sent_at")
+      .order("created_at", { ascending: false });
+
+    if (params?.status) {
+      purchaseOrdersQuery = purchaseOrdersQuery.eq("status", params.status);
+    }
+
+    const [
+      { data: purchaseOrders, error: purchaseOrdersError },
+      { data: purchaseOrderLines, error: purchaseOrderLinesError },
+      { data: suppliers, error: suppliersError },
+      { data: customers, error: customersError },
+    ] = await Promise.all([
+      purchaseOrdersQuery,
+      supabase.from("purchase_order_lines").select("purchase_order_id, request_line_id, customer_id"),
+      supabase.from("suppliers").select("id, name, order_email, email"),
+      supabase.from("customers").select("id, name"),
+    ]);
+
+    const firstError = purchaseOrdersError || purchaseOrderLinesError || suppliersError || customersError;
+
+    if (firstError) {
+      return {
+        purchaseOrders: filteredMock,
+        source: "mock",
+        message: `Live læsning fejlede: ${firstError.message}. Mockdata vises i stedet.`,
+      };
+    }
+
+    const supplierMap = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier as SupplierRow]));
+    const customerMap = new Map((customers ?? []).map((customer) => [customer.id, customer as CustomerRow]));
+    const lineMap = new Map<string, PurchaseOrderLineRow[]>();
+
+    for (const line of (purchaseOrderLines ?? []) as PurchaseOrderLineRow[]) {
+      const current = lineMap.get(line.purchase_order_id) ?? [];
+      current.push(line);
+      lineMap.set(line.purchase_order_id, current);
+    }
+
+    const cards = ((purchaseOrders ?? []) as PurchaseOrderRow[]).map((purchaseOrder) => {
+      const supplier = supplierMap.get(purchaseOrder.supplier_id);
+      const lines = lineMap.get(purchaseOrder.id) ?? [];
+      const customerIds = new Set(lines.map((line) => customerMap.get(line.customer_id)?.id ?? line.customer_id));
+
+      return {
+        id: purchaseOrder.id,
+        supplierName: supplier?.name ?? "Ukendt leverandør",
+        supplierEmail: supplier?.order_email ?? supplier?.email ?? null,
+        status: purchaseOrder.status,
+        statusLabel: formatPurchaseOrderStatus(purchaseOrder.status),
+        statusTone: purchaseOrderStatusTone(purchaseOrder.status),
+        lineCount: lines.length,
+        customerCount: customerIds.size,
+        createdAt: purchaseOrder.created_at,
+        sentAt: purchaseOrder.sent_at,
+        emailSubject: purchaseOrder.email_subject,
+      };
+    });
+
+    return {
+      purchaseOrders: cards,
+      source: "live",
+      message: params?.status
+        ? "Leverandørordrer er filtreret på valgt flowtrin."
+        : "Gemte leverandørordrer vises fra databasen.",
+    };
+  } catch (error) {
+    return {
+      purchaseOrders: filteredMock,
       source: "mock",
       message:
         error instanceof Error

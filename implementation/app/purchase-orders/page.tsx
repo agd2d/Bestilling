@@ -1,10 +1,32 @@
 import Link from "next/link";
 import CreatePurchaseOrderButton from "@/components/CreatePurchaseOrderButton";
-import { getPurchaseDraftsData } from "@/lib/orders/purchase-order-queries";
+import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
+import {
+  getPurchaseDraftsData,
+  getSavedPurchaseOrdersData,
+} from "@/lib/orders/purchase-order-queries";
+
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return "Ikke registreret endnu";
+  }
+
+  return new Intl.DateTimeFormat("da-DK", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
 export default async function PurchaseOrdersPage() {
-  const { groups, source, message } = await getPurchaseDraftsData();
-  const totalLines = groups.reduce((sum, group) => sum + group.lineCount, 0);
+  const [draftResult, savedResult] = await Promise.all([
+    getPurchaseDraftsData(),
+    getSavedPurchaseOrdersData(),
+  ]);
+
+  const totalDraftLines = draftResult.groups.reduce((sum, group) => sum + group.lineCount, 0);
+  const readyForInvoicingCount = savedResult.purchaseOrders.filter(
+    (purchaseOrder) => purchaseOrder.status === "completed"
+  ).length;
 
   return (
     <main className="page-shell">
@@ -19,20 +41,20 @@ export default async function PurchaseOrdersPage() {
 
         <div className="grid">
           <article className="card">
-            <strong>Leverandører klar</strong>
-            <p className="metric-inline">{groups.length}</p>
+            <strong>Åbne kladder</strong>
+            <p className="metric-inline">{draftResult.groups.length}</p>
           </article>
           <article className="card">
             <strong>Linjer samlet</strong>
-            <p className="metric-inline">{totalLines}</p>
+            <p className="metric-inline">{totalDraftLines}</p>
           </article>
           <article className="card">
-            <strong>Datakilde</strong>
-            <p className="metric-inline">{source === "live" ? "Live" : "Mock"}</p>
+            <strong>Gemte leverandørordrer</strong>
+            <p className="metric-inline">{savedResult.purchaseOrders.length}</p>
           </article>
           <article className="card">
-            <strong>Næste menu</strong>
-            <p className="metric-inline">Fakturering</p>
+            <strong>Klar til fakturering</strong>
+            <p className="metric-inline">{readyForInvoicingCount}</p>
           </article>
         </div>
       </section>
@@ -44,11 +66,11 @@ export default async function PurchaseOrdersPage() {
               <p className="kicker">Flow</p>
               <h2>Leverandørordre-flow</h2>
             </div>
-            <span className={`pill ${source === "live" ? "success" : "warning"}`}>
-              {source === "live" ? "Live data" : "Mock fallback"}
+            <span className={`pill ${savedResult.source === "live" ? "success" : "warning"}`}>
+              {savedResult.source === "live" ? "Live data" : "Mock fallback"}
             </span>
           </div>
-          {message && <p className="muted">{message}</p>}
+          {savedResult.message ? <p className="muted">{savedResult.message}</p> : null}
 
           <div className="flow-stage-grid">
             <div className="flow-stage-card">
@@ -76,70 +98,139 @@ export default async function PurchaseOrdersPage() {
           </div>
         </article>
 
-        {groups.map((group) => (
-          <article className="card" key={group.supplierId}>
-            <div className="card-header">
-              <div>
-                <p className="kicker">Leverandør</p>
-                <h2>{group.supplierName}</h2>
-                <p className="muted">
-                  {group.customerCount} kunder · {group.lineCount} linjer
-                </p>
-              </div>
-              <div className="button-row">
-                <span className="pill success">Klar til afsendt ordre</span>
-                {group.supplierEmail ? (
-                  <span className="pill neutral">{group.supplierEmail}</span>
-                ) : null}
-              </div>
+        <article className="card">
+          <div className="card-header">
+            <div>
+              <p className="kicker">Aktive leverandørordrer</p>
+              <h2>Status kan ændres direkte</h2>
             </div>
+            <span className="pill neutral">{savedResult.purchaseOrders.length} ordrer</span>
+          </div>
 
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Kunde</th>
-                  <th>Lokation</th>
-                  <th>Varenr.</th>
-                  <th>Varenavn</th>
-                  <th>Antal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {group.lines.map((line) => (
-                  <tr key={line.requestLineId}>
-                    <td>{line.customerName}</td>
-                    <td>{line.locationLabel}</td>
-                    <td>{line.productNumber}</td>
-                    <td>{line.productName}</td>
-                    <td>
-                      {line.quantity} {line.unit ?? ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {savedResult.purchaseOrders.length === 0 ? (
+            <p className="muted">Ingen leverandørordrer er gemt endnu.</p>
+          ) : (
+            <div className="panel-stack">
+              {savedResult.purchaseOrders.map((purchaseOrder) => (
+                <article className="card nested-card" key={purchaseOrder.id}>
+                  <div className="card-header">
+                    <div>
+                      <p className="kicker">Leverandør</p>
+                      <h3>{purchaseOrder.supplierName}</h3>
+                      <p className="muted">
+                        {purchaseOrder.customerCount} kunder · {purchaseOrder.lineCount} linjer
+                      </p>
+                    </div>
+                    <div className="button-row">
+                      <span className={`pill ${purchaseOrder.statusTone}`}>
+                        {purchaseOrder.statusLabel}
+                      </span>
+                      {purchaseOrder.supplierEmail ? (
+                        <span className="pill neutral">{purchaseOrder.supplierEmail}</span>
+                      ) : null}
+                    </div>
+                  </div>
 
-            <div className="purchase-actions-bar">
-              <CreatePurchaseOrderButton
-                supplierId={group.supplierId}
-                lineIds={group.lines.map((line) => line.requestLineId)}
-                emailSubject={group.emailSubject}
-                emailBody={group.emailBody}
-              />
+                  <div className="two-grid">
+                    <div>
+                      <p className="table-meta">Oprettet: {formatDateTime(purchaseOrder.createdAt)}</p>
+                      <p className="table-meta">Afsendt: {formatDateTime(purchaseOrder.sentAt)}</p>
+                      {purchaseOrder.emailSubject ? (
+                        <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p>
+                      ) : null}
+                    </div>
+                    <PurchaseOrderStatusSelect
+                      purchaseOrderId={purchaseOrder.id}
+                      currentStatus={purchaseOrder.status}
+                    />
+                  </div>
+                </article>
+              ))}
             </div>
+          )}
+        </article>
 
-            <div className="two-grid">
-              <div className="card nested-card">
-                <p className="kicker">Mail-emne</p>
-                <p className="mail-draft-box">{group.emailSubject}</p>
-              </div>
-              <div className="card nested-card">
-                <p className="kicker">Mail-krop</p>
-                <pre className="mail-draft-box multiline">{group.emailBody}</pre>
-              </div>
+        <article className="card">
+          <div className="card-header">
+            <div>
+              <p className="kicker">Nye kladder</p>
+              <h2>Klar til oprettelse</h2>
             </div>
-          </article>
-        ))}
+            <span className={`pill ${draftResult.source === "live" ? "success" : "warning"}`}>
+              {draftResult.source === "live" ? "Live data" : "Mock fallback"}
+            </span>
+          </div>
+          {draftResult.message ? <p className="muted">{draftResult.message}</p> : null}
+
+          {draftResult.groups.length === 0 ? (
+            <p className="muted">Ingen nye linjer er klar til at blive samlet lige nu.</p>
+          ) : (
+            draftResult.groups.map((group) => (
+              <article className="card nested-card" key={group.supplierId}>
+                <div className="card-header">
+                  <div>
+                    <p className="kicker">Leverandør</p>
+                    <h3>{group.supplierName}</h3>
+                    <p className="muted">
+                      {group.customerCount} kunder · {group.lineCount} linjer
+                    </p>
+                  </div>
+                  <div className="button-row">
+                    <span className="pill success">Klar til afsendt ordre</span>
+                    {group.supplierEmail ? (
+                      <span className="pill neutral">{group.supplierEmail}</span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Kunde</th>
+                      <th>Lokation</th>
+                      <th>Varenr.</th>
+                      <th>Varenavn</th>
+                      <th>Antal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.lines.map((line) => (
+                      <tr key={line.requestLineId}>
+                        <td>{line.customerName}</td>
+                        <td>{line.locationLabel}</td>
+                        <td>{line.productNumber}</td>
+                        <td>{line.productName}</td>
+                        <td>
+                          {line.quantity} {line.unit ?? ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="purchase-actions-bar">
+                  <CreatePurchaseOrderButton
+                    supplierId={group.supplierId}
+                    lineIds={group.lines.map((line) => line.requestLineId)}
+                    emailSubject={group.emailSubject}
+                    emailBody={group.emailBody}
+                  />
+                </div>
+
+                <div className="two-grid">
+                  <div className="card nested-card">
+                    <p className="kicker">Mail-emne</p>
+                    <p className="mail-draft-box">{group.emailSubject}</p>
+                  </div>
+                  <div className="card nested-card">
+                    <p className="kicker">Mail-krop</p>
+                    <pre className="mail-draft-box multiline">{group.emailBody}</pre>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
+        </article>
       </section>
     </main>
   );
