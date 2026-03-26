@@ -1,3 +1,4 @@
+import CreatePurchaseOrderButton from "@/components/CreatePurchaseOrderButton";
 import { getPurchaseDraftsData } from "@/lib/orders/purchase-order-queries";
 
 export default async function PurchaseOrdersPage() {
@@ -90,6 +91,15 @@ export default async function PurchaseOrdersPage() {
                 ))}
               </tbody>
             </table>
+
+            <div className="purchase-actions-bar">
+              <CreatePurchaseOrderButton
+                supplierId={group.supplierId}
+                lineIds={group.lines.map((line) => line.requestLineId)}
+                emailSubject={group.emailSubject}
+                emailBody={group.emailBody}
+              />
+            </div>
 
             <div className="two-grid">
               <div className="card nested-card">

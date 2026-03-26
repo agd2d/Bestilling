@@ -521,6 +521,15 @@ a {
   min-height: 220px;
 }
 
+.purchase-actions-bar {
+  margin: 16px 0;
+}
+
+.purchase-action-wrap {
+  display: grid;
+  gap: 8px;
+}
+
 @media (max-width: 720px) {
   .app-header-inner {
     flex-direction: column;
