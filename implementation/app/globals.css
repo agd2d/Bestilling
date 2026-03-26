@@ -511,6 +511,15 @@ a {
   overflow-x: auto;
 }
 
+.clickable-table-row {
+  cursor: pointer;
+}
+
+.clickable-table-row:hover td,
+.clickable-table-row:focus-visible td {
+  background: #f4f1e7;
+}
+
 .mail-draft-box {
   margin: 0;
   padding: 14px;

@@ -1,5 +1,6 @@
-import Link from "next/link";
-import OrderStatusSelect from "@/components/OrderStatusSelect";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { MockOrder } from "@/lib/orders/mock-orders";
 
 function pillClass(status: string) {
@@ -33,6 +34,12 @@ export default function OrdersOverviewTable({
   source: "live" | "mock";
   message?: string;
 }) {
+  const router = useRouter();
+
+  function openOrder(orderId: string) {
+    router.push(`/orders/${orderId}`);
+  }
+
   return (
     <div className="card">
       <div className="card-header">
@@ -63,11 +70,21 @@ export default function OrdersOverviewTable({
         </thead>
         <tbody>
           {orders.map((order) => (
-            <tr key={order.id}>
+            <tr
+              key={order.id}
+              className="clickable-table-row"
+              onClick={() => openOrder(order.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openOrder(order.id);
+                }
+              }}
+              role="link"
+              tabIndex={0}
+            >
               <td>
-                <Link href={`/orders/${order.id}`} className="table-link">
-                  {order.locationLabel}
-                </Link>
+                <strong>{order.locationLabel}</strong>
                 <div className="table-meta">{order.createdAt}</div>
               </td>
               <td>{order.customerName}</td>
@@ -82,9 +99,6 @@ export default function OrdersOverviewTable({
               </td>
               <td>
                 <span className={pillClass(order.status)}>{order.status}</span>
-                <div className="table-meta">
-                  <OrderStatusSelect orderId={order.id} currentStatus={order.rawStatus} />
-                </div>
               </td>
               <td>
                 {order.labels.length > 0 ? (
