@@ -1,7 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 
 export default function OrderFlowButton({
   orderId,
@@ -10,9 +9,8 @@ export default function OrderFlowButton({
   orderId: string;
   currentStatus: string;
 }) {
-  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   const sendToOrder = currentStatus !== 'sent_to_supplier';
   const buttonLabel = sendToOrder ? 'Send til ordre' : 'Send ordre tilbage til kundebestillinger';
@@ -31,30 +29,30 @@ export default function OrderFlowButton({
       }
     }
 
-    const response = await fetch(`/api/orders/requests/${orderId}/flow`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ targetStatus }),
-    });
+    setIsPending(true);
 
-    const data = (await response.json()) as { message?: string; error?: string };
+    try {
+      const response = await fetch(`/api/orders/requests/${orderId}/flow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetStatus }),
+      });
 
-    if (!response.ok) {
-      setMessage(data.error ?? 'Flow kunne ikke opdateres');
-      return;
+      const data = (await response.json()) as { message?: string; error?: string };
+
+      if (!response.ok) {
+        setMessage(data.error ?? 'Flow kunne ikke opdateres');
+        setIsPending(false);
+        return;
+      }
+
+      window.location.assign(sendToOrder ? '/orders' : '/purchase-orders');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Flow kunne ikke opdateres');
+      setIsPending(false);
     }
-
-    if (!sendToOrder) {
-      window.location.assign('/purchase-orders');
-      return;
-    }
-
-    setMessage(data.message ?? 'Flow opdateret');
-    startTransition(() => {
-      router.refresh();
-    });
   }
 
   return (
