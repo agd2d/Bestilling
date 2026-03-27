@@ -294,17 +294,18 @@ a {
 
 .label-toggle {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
-  padding: 14px 16px;
+  min-height: 44px;
+  padding: 10px 12px;
   border: 1px solid #ddd5c8;
   border-radius: 16px;
   background: #fffefb;
   color: inherit;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
 }
 
 .label-toggle.selected {
@@ -363,6 +364,15 @@ a {
   gap: 10px;
 }
 
+.line-mode-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.line-mode-grid.two-up {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .editor-field {
   display: grid;
   gap: 6px;
@@ -385,6 +395,7 @@ a {
 
 .line-editor-note {
   grid-column: span 2;
+  margin: 0;
   padding: 12px 14px;
   border-radius: 14px;
   background: #f4f1e7;
@@ -686,14 +697,16 @@ a {
     grid-template-columns: 1fr;
   }
 
-    .orders-dashboard-grid,
-    .two-grid,
-    .stats-grid,
-    .dashboard-mini-grid,
-    .quick-link-grid,
-    .line-editor-grid,
-    .flow-stage-grid {
-      grid-template-columns: 1fr;
+  .orders-dashboard-grid,
+  .two-grid,
+  .stats-grid,
+  .dashboard-mini-grid,
+  .quick-link-grid,
+  .line-mode-grid.compact,
+  .line-mode-grid.two-up,
+  .line-editor-grid,
+  .flow-stage-grid {
+    grid-template-columns: 1fr;
   }
 
   .card-header,

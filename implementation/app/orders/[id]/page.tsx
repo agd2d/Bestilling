@@ -72,6 +72,7 @@ export default async function OrderDetailPage({
 
       <section className="panel-stack">
         <OrderLinesEditor
+          requestId={order.id}
           lines={order.lines}
           products={availableProducts}
           suppliers={availableSuppliers}

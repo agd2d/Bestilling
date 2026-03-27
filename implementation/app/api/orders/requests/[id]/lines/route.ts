@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isDevAuthBypassed } from "@/lib/env";
-import { resolveOrderLine } from "@/lib/orders/order-line-actions";
+import { createOrderLine } from "@/lib/orders/order-line-actions";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(
@@ -26,7 +26,7 @@ export async function POST(
 
     const { id } = await context.params;
     const body = (await request.json()) as {
-      mode?: "existing" | "new" | "ignore";
+      mode?: "existing" | "new";
       productId?: string;
       productNumber?: string;
       productName?: string;
@@ -39,8 +39,8 @@ export async function POST(
       return NextResponse.json({ error: "Handling mangler" }, { status: 400 });
     }
 
-    const result = await resolveOrderLine({
-      lineId: id,
+    const result = await createOrderLine({
+      requestId: id,
       mode: body.mode,
       productId: body.productId,
       productNumber: body.productNumber,
@@ -59,7 +59,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : "Ukendt fejl ved varelinje-opdatering",
+          error instanceof Error ? error.message : "Ukendt fejl ved oprettelse af varelinje",
       },
       { status: 500 }
     );
