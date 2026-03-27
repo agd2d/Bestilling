@@ -155,21 +155,35 @@ export default function OrderLinesEditor({
                     <td colSpan={6}>
                       <div className="line-editor">
                         <div className="line-editor-grid">
-                          <label className="editor-field">
+                          <div className="editor-field editor-field-wide">
                             Løsning
-                            <select
-                              className="status-select"
-                              value={state.mode}
-                              onChange={(event) =>
-                                updateLineState(line.id, 'mode', event.target.value)
-                              }
-                              disabled={isPending}
-                            >
-                              <option value="existing">Vælg vare fra listen</option>
-                              <option value="new">Opret ny vare</option>
-                              <option value="ignore">Slet / ignorer linje</option>
-                            </select>
-                          </label>
+                            <div className="line-mode-grid">
+                              <button
+                                type="button"
+                                className={`label-toggle ${state.mode === 'existing' ? 'selected' : ''}`}
+                                onClick={() => updateLineState(line.id, 'mode', 'existing')}
+                                disabled={isPending}
+                              >
+                                <span>Vælg vare fra listen</span>
+                              </button>
+                              <button
+                                type="button"
+                                className={`label-toggle ${state.mode === 'new' ? 'selected' : ''}`}
+                                onClick={() => updateLineState(line.id, 'mode', 'new')}
+                                disabled={isPending}
+                              >
+                                <span>Opret ny vare</span>
+                              </button>
+                              <button
+                                type="button"
+                                className={`label-toggle ${state.mode === 'ignore' ? 'selected' : ''}`}
+                                onClick={() => updateLineState(line.id, 'mode', 'ignore')}
+                                disabled={isPending}
+                              >
+                                <span>Slet / ignorer linje</span>
+                              </button>
+                            </div>
+                          </div>
 
                           {state.mode === 'existing' ? (
                             <label className="editor-field editor-field-wide">
