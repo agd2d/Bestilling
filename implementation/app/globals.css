@@ -626,6 +626,51 @@ a {
   gap: 14px;
 }
 
+.dashboard-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mini-stat-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f4f1e7;
+  border: 1px solid #ddd5c8;
+}
+
+.mini-stat-card strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.6rem;
+}
+
+.mini-stat-card p {
+  margin: 0;
+  color: #5e665d;
+}
+
+.quick-link-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-link-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #ddd5c8;
+  background: #fffefb;
+  text-decoration: none;
+}
+
+.quick-link-card p {
+  margin: 0;
+  color: #5e665d;
+}
+
 @media (max-width: 720px) {
   .app-header-inner {
     flex-direction: column;
@@ -636,12 +681,14 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .orders-dashboard-grid,
-  .two-grid,
-  .stats-grid,
-  .line-editor-grid,
-  .flow-stage-grid {
-    grid-template-columns: 1fr;
+    .orders-dashboard-grid,
+    .two-grid,
+    .stats-grid,
+    .dashboard-mini-grid,
+    .quick-link-grid,
+    .line-editor-grid,
+    .flow-stage-grid {
+      grid-template-columns: 1fr;
   }
 
   .card-header,

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const navItems = [
-  { href: "/", label: "Overblik" },
+  { href: "/", label: "Arbejdsbord" },
   { href: "/orders", label: "Varebestilling" },
   { href: "/purchase-orders", label: "Leverandørordre" },
   { href: "/products", label: "Varekatalog" },
