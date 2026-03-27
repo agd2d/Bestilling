@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "eslint",
     "sync:customer-aliases": "node scripts/apply-jotform-customer-mapping.mjs",
-    "sync:jotform-products": "node scripts/sync-jotform-products.mjs"
+    "sync:jotform-products": "node scripts/sync-jotform-products.mjs",
+    "sync:totalrent-products": "node scripts/sync-totalrent-products.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
@@ -19,7 +20,8 @@
     "geist": "^1.7.0",
     "next": "16.2.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "xlsx": "^0.18.5"
   },
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-x64-gnu": "4.2.2",
