@@ -586,9 +586,77 @@ a {
   cursor: pointer;
 }
 
+.selected-table-row td {
+  background: #f4f1e7;
+}
+
 .clickable-table-row:hover td,
 .clickable-table-row:focus-visible td {
   background: #f4f1e7;
+}
+
+.selection-column {
+  width: 52px;
+}
+
+.row-selector {
+  width: 18px;
+  height: 18px;
+  accent-color: #245741;
+  cursor: pointer;
+}
+
+.merge-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid #ece7dd;
+  border-radius: 18px;
+  background: #fbfaf5;
+}
+
+.merge-toolbar p {
+  margin: 6px 0 0;
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(29 35 31 / 45%);
+  z-index: 50;
+}
+
+.dialog-card {
+  width: min(100%, 640px);
+  padding: 24px;
+  border-radius: 24px;
+  background: #fffefb;
+  border: 1px solid #ddd5c8;
+  box-shadow: 0 24px 80px rgb(25 30 27 / 20%);
+}
+
+.dialog-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.dialog-list-item {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid #ece7dd;
+  background: #fbfaf5;
+}
+
+.dialog-list-item p {
+  margin: 6px 0 0;
+  color: #5e665d;
 }
 
 .mail-draft-box {
@@ -711,6 +779,7 @@ a {
 
   .card-header,
   .preview-head,
+  .merge-toolbar,
   .env-row,
   .insight-row {
     flex-direction: column;

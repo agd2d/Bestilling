@@ -154,6 +154,7 @@ function buildLiveOrders(params: {
 
     return {
       id: request.id,
+      customerId: request.customer_id,
       locationLabel: request.location_label,
       customerName: customerMap.get(request.customer_id) ?? "Ukendt kunde",
       submittedBy: request.submitted_by_name ?? "Ukendt",

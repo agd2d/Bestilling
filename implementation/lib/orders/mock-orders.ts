@@ -14,6 +14,7 @@ export interface MockOrderLine {
 
 export interface MockOrder {
   id: string;
+  customerId: string;
   locationLabel: string;
   customerName: string;
   submittedBy: string;
@@ -83,6 +84,7 @@ export const mockProducts: ProductOption[] = [
 export const mockOrders: MockOrder[] = [
   {
     id: "req-2026-031",
+    customerId: "customer-solhoj",
     locationLabel: "Lokation på kunden - Plejecenter Solhøj",
     customerName: "Plejecenter Solhøj",
     submittedBy: "Maria Hansen",
@@ -149,6 +151,7 @@ export const mockOrders: MockOrder[] = [
   },
   {
     id: "req-2026-032",
+    customerId: "customer-egebo",
     locationLabel: "Lokation på kunden - Børnehuset Egebo",
     customerName: "Børnehuset Egebo",
     submittedBy: "Anne Kristensen",
@@ -202,6 +205,7 @@ export const mockOrders: MockOrder[] = [
   },
   {
     id: "req-2026-033",
+    customerId: "customer-enghaven",
     locationLabel: "Lokation på kunden - Enghaven Skole",
     customerName: "Enghaven Skole",
     submittedBy: "Jonatan",
