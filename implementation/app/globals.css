@@ -539,6 +539,33 @@ a {
   overflow-x: auto;
 }
 
+.catalog-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.catalog-search {
+  display: grid;
+  gap: 6px;
+  min-width: min(100%, 360px);
+  flex: 1 1 320px;
+}
+
+.catalog-search-label {
+  font-size: 0.82rem;
+  color: #5f665f;
+}
+
+.catalog-search-meta {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #5e665d;
+}
+
 .clickable-table-row {
   cursor: pointer;
 }

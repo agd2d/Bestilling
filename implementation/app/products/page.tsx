@@ -1,18 +1,7 @@
+import { ProductCatalogTable } from "@/components/ProductCatalogTable";
 import { getProductCatalogData } from "@/lib/products/product-catalog-queries";
 
 export const dynamic = "force-dynamic";
-
-function formatPrice(value: number | null) {
-  if (value === null || Number.isNaN(value)) {
-    return "-";
-  }
-
-  return new Intl.NumberFormat("da-DK", {
-    style: "currency",
-    currency: "DKK",
-    minimumFractionDigits: 2,
-  }).format(value);
-}
 
 export default async function ProductsPage() {
   const { items, stats, source, message } = await getProductCatalogData();
@@ -26,8 +15,8 @@ export default async function ProductsPage() {
           <div>
             <h1>Varer og statistik</h1>
             <p>
-              Her ligger varekartoteket, som binder kundebestillinger, leverandørordrer og senere
-              statistik sammen.
+              Her ligger varekartoteket, som binder kundebestillinger,
+              leverand&oslash;rordrer og senere statistik sammen.
             </p>
           </div>
           <span className={`pill ${source === "live" ? "success" : "warning"}`}>
@@ -60,7 +49,9 @@ export default async function ProductsPage() {
               Statistikken beregnes ud fra varelinjer, der er koblet direkte til katalogets varer.
             </p>
             <p className="metric-inline">{stats.totalOrderedQuantity}</p>
-            <p className="metric-subtext">Samlet bestilt antal på tværs af registrerede ordrer</p>
+            <p className="metric-subtext">
+              Samlet bestilt antal p&aring; tv&aelig;rs af registrerede ordrer
+            </p>
           </article>
 
           <article className="card">
@@ -70,10 +61,10 @@ export default async function ProductsPage() {
                 <div className="insight-row static" key={product.id}>
                   <div>
                     <strong>
-                      {product.productNumber} · {product.name}
+                      {product.productNumber} &middot; {product.name}
                     </strong>
                     <p>
-                      {product.supplierName} · {product.totalQuantity} {product.unit}
+                      {product.supplierName} &middot; {product.totalQuantity} {product.unit}
                     </p>
                   </div>
                   <span className={`pill ${product.usageCount > 0 ? "success" : "neutral"}`}>
@@ -94,44 +85,7 @@ export default async function ProductsPage() {
             <span className="pill info">Klar til statistik</span>
           </div>
 
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Varenummer</th>
-                  <th>Varenavn</th>
-                  <th>Leverandør</th>
-                  <th>Enhed</th>
-                  <th>Pris</th>
-                  <th>Status</th>
-                  <th>Ordrelinjer</th>
-                  <th>Antal bestilt</th>
-                  <th>Senest brugt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <span className="code">{product.productNumber}</span>
-                    </td>
-                    <td>{product.name}</td>
-                    <td>{product.supplierName}</td>
-                    <td>{product.unit}</td>
-                    <td>{formatPrice(product.defaultPrice)}</td>
-                    <td>
-                      <span className={`pill ${product.isActive ? "success" : "neutral"}`}>
-                        {product.isActive ? "Aktiv" : "Inaktiv"}
-                      </span>
-                    </td>
-                    <td>{product.usageCount}</td>
-                    <td>{product.totalQuantity}</td>
-                    <td>{product.lastOrderedAt ?? "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ProductCatalogTable items={items} />
         </article>
       </section>
     </main>
