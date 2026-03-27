@@ -17,6 +17,7 @@ import {
 
 const DEFAULT_PAGE_SIZE = 100;
 const JOTFORM_BASE = "https://eu-api.jotform.com";
+const DEFAULT_MIN_CREATED_AT = "2026-03-16T00:00:00+01:00";
 
 function normalize(value: string | null | undefined) {
   return (value ?? "")
@@ -248,6 +249,21 @@ function extractNumber(answer: unknown): number | null {
   return null;
 }
 
+function parseSubmissionCreatedAt(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed;
+  }
+
+  const normalized = value.includes("T") ? value : value.replace(" ", "T");
+  const reparsed = new Date(normalized);
+  return Number.isNaN(reparsed.getTime()) ? null : reparsed;
+}
+
 function tryParseLineItemsField(answer: unknown): ParsedOrderLineInput[] {
   if (!Array.isArray(answer)) return [];
 
@@ -430,10 +446,12 @@ export async function fetchJotformSubmissions(params: {
   apiKey: string;
   formId: string;
   existingIds: Set<string>;
+  minCreatedAt?: string;
 }) {
   const submissions: JotformSubmission[] = [];
   let offset = 0;
   let skippedExisting = 0;
+  const minCreatedAt = parseSubmissionCreatedAt(params.minCreatedAt ?? DEFAULT_MIN_CREATED_AT);
 
   while (true) {
     const url = `${JOTFORM_BASE}/form/${params.formId}/submissions?apiKey=${params.apiKey}&limit=${DEFAULT_PAGE_SIZE}&offset=${offset}&orderby=created_at&direction=DESC`;
@@ -447,17 +465,31 @@ export async function fetchJotformSubmissions(params: {
 
     if (pageSubmissions.length === 0) break;
 
-    skippedExisting += pageSubmissions.filter((submission) =>
+    const filteredPageSubmissions = minCreatedAt
+      ? pageSubmissions.filter((submission) => {
+          const createdAt = parseSubmissionCreatedAt(submission.created_at);
+          return createdAt ? createdAt >= minCreatedAt : false;
+        })
+      : pageSubmissions;
+
+    skippedExisting += filteredPageSubmissions.filter((submission) =>
       params.existingIds.has(submission.id)
     ).length;
 
-    submissions.push(...pageSubmissions);
+    submissions.push(...filteredPageSubmissions);
 
-    const allKnown = pageSubmissions.every((submission) =>
+    const allKnown = filteredPageSubmissions.length > 0 && filteredPageSubmissions.every((submission) =>
       params.existingIds.has(submission.id)
     );
 
-    if (allKnown || pageSubmissions.length < DEFAULT_PAGE_SIZE) {
+    const reachedOlderSubmissions = minCreatedAt
+      ? pageSubmissions.some((submission) => {
+          const createdAt = parseSubmissionCreatedAt(submission.created_at);
+          return createdAt ? createdAt < minCreatedAt : false;
+        })
+      : false;
+
+    if (allKnown || pageSubmissions.length < DEFAULT_PAGE_SIZE || reachedOlderSubmissions) {
       break;
     }
 
@@ -476,6 +508,7 @@ export async function fetchJotformSubmissions(params: {
 export async function syncJotformOrderSubmissions(params: {
   apiKey: string;
   formId: string;
+  minCreatedAt?: string;
   config?: JotformFieldConfig;
   repository: JotformSyncRepository;
 }): Promise<SyncResult> {
@@ -496,6 +529,7 @@ export async function syncJotformOrderSubmissions(params: {
     apiKey: params.apiKey,
     formId: params.formId,
     existingIds,
+    minCreatedAt: params.minCreatedAt,
   });
 
   let importedRequests = 0;
@@ -553,6 +587,7 @@ export async function syncJotformOrderSubmissions(params: {
       delivery_address: parsed.deliveryAddress,
       requested_delivery_date: parsed.requestedDeliveryDate,
       internal_note: parsed.internalNote,
+      created_at: new Date(parsed.submittedAt).toISOString(),
       imported_at: new Date().toISOString(),
     };
 

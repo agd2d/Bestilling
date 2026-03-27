@@ -19,6 +19,7 @@ import { hasEnv, isDevAuthBypassed } from "../../../../../lib/env";
 
 const JOTFORM_API_KEY = process.env.JOTFORM_API_KEY!;
 const JOTFORM_FORM_ID = process.env.ORDERS_JOTFORM_FORM_ID!;
+const DEFAULT_MIN_CREATED_AT = "2026-03-16T00:00:00+01:00";
 
 function createRepository(adminClient: any): JotformSyncRepository {
   return {
@@ -137,6 +138,7 @@ export async function POST(request: Request) {
     const repository = createRepository(adminClient);
     const { searchParams } = new URL(request.url);
     const dryRun = searchParams.get("dryRun") === "true";
+    const minCreatedAt = searchParams.get("minCreatedAt") ?? DEFAULT_MIN_CREATED_AT;
 
     if (dryRun) {
       const [existingIds, customers, aliases, products] = await Promise.all([
@@ -153,6 +155,7 @@ export async function POST(request: Request) {
         customers,
         aliases,
         products,
+        minCreatedAt,
       });
 
       return NextResponse.json(result);
@@ -161,6 +164,7 @@ export async function POST(request: Request) {
     const result = await syncJotformOrderSubmissions({
       apiKey: JOTFORM_API_KEY,
       formId: JOTFORM_FORM_ID,
+      minCreatedAt,
       repository,
     });
 

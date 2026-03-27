@@ -8,6 +8,15 @@ export default async function OrdersPage() {
   const { orders, source, message } = await getOrdersListData();
   const totalLines = orders.reduce((sum, order) => sum + order.lineCount, 0);
   const actionOrders = orders.filter((order) => order.actionRequiredCount > 0);
+  const readyOrders = orders
+    .filter((order) => order.actionRequiredCount === 0)
+    .map((order) => ({
+      ...order,
+      readyLineCount: order.lines.filter((line) => line.status.toLowerCase().includes("klar")).length,
+    }))
+    .filter((order) => order.readyLineCount > 0)
+    .sort((a, b) => b.readyLineCount - a.readyLineCount || b.lineCount - a.lineCount)
+    .slice(0, 5);
   const actionLines = orders.reduce((sum, order) => sum + order.actionRequiredCount, 0);
   const readyLines = orders.flatMap((order) =>
     order.lines.filter((line) => line.status.toLowerCase().includes("klar"))
@@ -103,27 +112,27 @@ export default async function OrdersPage() {
           <div className="card-header">
             <div>
               <p className="kicker">Klar til n&aelig;ste flow</p>
-              <h2>Send til ordre</h2>
+              <h2>N&aelig;ste bestillinger at sende</h2>
             </div>
-            <span className="pill neutral">{supplierSummary.length} leverand&oslash;rer</span>
+            <span className="pill neutral">{readyOrders.length} bestillinger</span>
           </div>
           <div className="insight-list">
-            {supplierSummary.map((supplier) => (
-              <div key={supplier.supplier} className="insight-row static">
+            {readyOrders.map((order) => (
+              <Link href={`/orders/${order.id}`} key={order.id} className="insight-row">
                 <div>
-                  <strong>{supplier.supplier}</strong>
-                  <p>{supplier.lineCount} linjer fra kundebestillinger</p>
+                  <strong>{order.customerName}</strong>
+                  <p>
+                    {order.locationLabel} · {order.readyLineCount} linjer klar til Send til ordre
+                  </p>
                 </div>
-                <span className={`pill ${supplier.actionCount > 0 ? "warning" : "success"}`}>
-                  {supplier.actionCount > 0
-                    ? `${supplier.actionCount} kr\u00e6ver afklaring`
-                    : "Klar til Send til ordre"}
+                <span className="pill success">
+                  {order.lineCount} linjer i bestillingen
                 </span>
-              </div>
+              </Link>
             ))}
-            {supplierSummary.length === 0 && (
+            {readyOrders.length === 0 && (
               <div className="empty-state-inline">
-                Ingen leverand&oslash;roversigt endnu. Import&eacute;r ordrer for at samle linjer.
+                Ingen bestillinger er helt klar endnu. Afklar varelinjer i venstre kolonne f&oslash;rst.
               </div>
             )}
           </div>

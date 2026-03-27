@@ -74,6 +74,7 @@ export interface OrderRequestInsert {
   delivery_address: string | null;
   requested_delivery_date: string | null;
   internal_note: string | null;
+  created_at: string;
   imported_at: string;
 }
 

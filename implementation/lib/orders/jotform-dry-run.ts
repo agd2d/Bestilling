@@ -46,6 +46,7 @@ export async function previewJotformOrderSync(params: {
   customers: CustomerRecord[];
   aliases: CustomerAliasRecord[];
   products: ProductRecord[];
+  minCreatedAt?: string;
   config?: JotformFieldConfig;
 }) {
   const config = params.config ?? getDefaultJotformFieldConfig();
@@ -56,6 +57,7 @@ export async function previewJotformOrderSync(params: {
     apiKey: params.apiKey,
     formId: params.formId,
     existingIds: params.existingIds,
+    minCreatedAt: params.minCreatedAt,
   });
 
   const preview = newSubmissions.slice(0, 10).map((submission: JotformSubmission) => {
@@ -82,6 +84,7 @@ export async function previewJotformOrderSync(params: {
 
     return {
       submissionId: parsed.submissionId,
+      createdAt: parsed.submittedAt,
       locationLabel: parsed.locationLabel,
       customerMatched: Boolean(customerId),
       customerSuggestions: suggestions,
@@ -93,6 +96,7 @@ export async function previewJotformOrderSync(params: {
   return {
     success: true,
     dryRun: true,
+    minCreatedAt: params.minCreatedAt ?? "2026-03-16T00:00:00+01:00",
     skippedExisting,
     fetchedNewSubmissions: newSubmissions.length,
     preview,
