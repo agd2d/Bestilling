@@ -67,3 +67,15 @@ Hvis OneDrive giver problemer med låste filer eller cache:
    - `implementation/.next`
    - `implementation/node_modules`
 3. kør `setup.cmd` igen
+
+## Codex-kontekst på ny pc
+
+Codex deler ikke automatisk lokal chat-historik mellem maskiner.
+
+For at fortsætte hurtigt på en ny pc, brug disse filer i repoet:
+
+- `docs/project-context.md`
+- `docs/continue-in-codex.md`
+- `docs/microsoft-graph-mail-setup.md`
+
+De er lavet som projektets fælles hukommelse, så Codex kan sættes ind i arbejdet igen uden den gamle lokale chat.

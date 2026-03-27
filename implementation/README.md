@@ -39,3 +39,5 @@ Se:
 
 - `../docs/run-from-another-pc.md`
 - `../docs/implementation-runbook.md`
+- `../docs/project-context.md`
+- `../docs/continue-in-codex.md`
