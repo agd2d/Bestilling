@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { isDevAuthBypassed } from "@/lib/env";
-import { sendPurchaseOrderMail } from "@/lib/orders/purchase-order-actions";
+import { updatePurchaseOrderMailDraft } from "@/lib/orders/purchase-order-actions";
 import { createClient } from "@/lib/supabase/server";
 
-export async function POST(
+export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -25,16 +25,12 @@ export async function POST(
     }
 
     const { id } = await context.params;
-    const payload = (await request.json().catch(() => ({}))) as {
-      to?: string;
-      subject?: string;
-      body?: string;
-    };
-    const result = await sendPurchaseOrderMail({
+    const payload = (await request.json()) as { subject?: string; body?: string };
+
+    const result = await updatePurchaseOrderMailDraft({
       purchaseOrderId: id,
-      to: payload.to,
-      subject: payload.subject,
-      body: payload.body,
+      subject: payload.subject ?? "",
+      body: payload.body ?? "",
     });
 
     if (!result.success) {
@@ -46,9 +42,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Ukendt fejl ved afsendelse af leverandørmail",
+          error instanceof Error ? error.message : "Ukendt fejl ved gemning af mailudkast",
       },
       { status: 500 }
     );

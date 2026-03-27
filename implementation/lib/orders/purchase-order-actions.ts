@@ -34,6 +34,12 @@ export interface SendPurchaseOrderMailResult {
   message: string;
 }
 
+export interface UpdatePurchaseOrderMailDraftResult {
+  success: boolean;
+  source: "live" | "mock";
+  message: string;
+}
+
 interface RequestLineRow {
   id: string;
   request_id: string;
@@ -715,6 +721,9 @@ export async function undoSupplierOrderForRequest(params: {
 
 export async function sendPurchaseOrderMail(params: {
   purchaseOrderId: string;
+  to?: string;
+  subject?: string;
+  body?: string;
 }): Promise<SendPurchaseOrderMailResult> {
   if (!params.purchaseOrderId) {
     return {
@@ -772,7 +781,9 @@ export async function sendPurchaseOrderMail(params: {
     }
 
     const supplierRow = supplier as SendSupplierRow;
-    const to = supplierRow.order_email ?? supplierRow.email;
+    const to = params.to?.trim() || supplierRow.order_email || supplierRow.email;
+    const subject = params.subject?.trim() || order.email_subject;
+    const body = params.body?.trim() || order.email_body;
 
     if (!to) {
       return {
@@ -782,7 +793,7 @@ export async function sendPurchaseOrderMail(params: {
       };
     }
 
-    if (!order.email_subject || !order.email_body) {
+    if (!subject || !body) {
       return {
         success: false,
         source: "live",
@@ -792,8 +803,8 @@ export async function sendPurchaseOrderMail(params: {
 
     await sendMailViaMicrosoftGraph({
       to,
-      subject: order.email_subject,
-      body: order.email_body,
+      subject,
+      body,
     });
 
     const nextStatus = order.status === "draft" ? "sent" : order.status;
@@ -801,6 +812,8 @@ export async function sendPurchaseOrderMail(params: {
       .from("purchase_orders")
       .update({
         status: nextStatus,
+        email_subject: subject,
+        email_body: body,
         sent_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -825,6 +838,68 @@ export async function sendPurchaseOrderMail(params: {
       source: "live",
       message:
         error instanceof Error ? error.message : "Ukendt fejl ved afsendelse af leverandørmail.",
+    };
+  }
+}
+
+export async function updatePurchaseOrderMailDraft(params: {
+  purchaseOrderId: string;
+  subject: string;
+  body: string;
+}): Promise<UpdatePurchaseOrderMailDraftResult> {
+  if (!params.purchaseOrderId) {
+    return {
+      success: false,
+      source: "mock",
+      message: "Leverandørordren mangler id.",
+    };
+  }
+
+  if (!params.subject.trim() || !params.body.trim()) {
+    return {
+      success: false,
+      source: "mock",
+      message: "Mail-emne og mail-tekst skal udfyldes.",
+    };
+  }
+
+  if (!canUseLiveData()) {
+    return {
+      success: true,
+      source: "mock",
+      message: "Mock fallback: mailudkastet er ikke gemt i databasen endnu.",
+    };
+  }
+
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from("purchase_orders")
+      .update({
+        email_subject: params.subject.trim(),
+        email_body: params.body.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.purchaseOrderId);
+
+    if (error) {
+      return {
+        success: false,
+        source: "live",
+        message: error.message,
+      };
+    }
+
+    return {
+      success: true,
+      source: "live",
+      message: "Mailudkast er gemt.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      source: "live",
+      message: error instanceof Error ? error.message : "Ukendt fejl ved gemning af mailudkast.",
     };
   }
 }

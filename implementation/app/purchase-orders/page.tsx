@@ -166,14 +166,9 @@ export default async function PurchaseOrdersPage() {
                         purchaseOrderId={purchaseOrder.id}
                         currentStatus={purchaseOrder.status}
                       />
-                      {purchaseOrder.emailSubject ? (
-                        <SupplierMailButton
-                          to={purchaseOrder.supplierEmail}
-                          subject={purchaseOrder.emailSubject}
-                          body={`Ordrenummer: ${purchaseOrder.orderNumber}`}
-                          purchaseOrderId={purchaseOrder.id}
-                        />
-                      ) : null}
+                      <Link className="button secondary" href={`/purchase-orders/${purchaseOrder.id}`}>
+                        Preview og send mail
+                      </Link>
                     </div>
                   </div>
                 </article>

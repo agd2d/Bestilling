@@ -177,6 +177,10 @@ a {
   color: #fff;
   padding: 10px 16px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .button.secondary {
@@ -565,6 +569,15 @@ a {
 .purchase-action-wrap {
   display: grid;
   gap: 8px;
+}
+
+.mail-editor {
+  display: grid;
+  gap: 14px;
+}
+
+.mail-editor-textarea {
+  min-height: 260px;
 }
 
 .flow-stage-grid {

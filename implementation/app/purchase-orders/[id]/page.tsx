@@ -1,7 +1,7 @@
 import Link from "next/link";
 import PurchaseOrderLifecycleButtons from "@/components/PurchaseOrderLifecycleButtons";
+import PurchaseOrderMailEditor from "@/components/PurchaseOrderMailEditor";
 import PurchaseOrderStatusSelect from "@/components/PurchaseOrderStatusSelect";
-import SupplierMailButton from "@/components/SupplierMailButton";
 import { getPurchaseOrderDetailData } from "@/lib/orders/purchase-order-queries";
 
 export const dynamic = "force-dynamic";
@@ -80,19 +80,7 @@ export default async function PurchaseOrderDetailPage({
               <p className="table-meta">E-mail: {purchaseOrder.supplierEmail ?? "Ikke registreret"}</p>
               <p className="table-meta">Oprettet: {formatDateTime(purchaseOrder.createdAt)}</p>
               <p className="table-meta">Afgivet: {formatDateTime(purchaseOrder.sentAt)}</p>
-              {purchaseOrder.emailSubject ? (
-                <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p>
-              ) : null}
-              {purchaseOrder.emailBody && purchaseOrder.emailSubject ? (
-                <div className="purchase-actions-bar">
-                  <SupplierMailButton
-                    to={purchaseOrder.supplierEmail}
-                    subject={purchaseOrder.emailSubject}
-                    body={purchaseOrder.emailBody}
-                    purchaseOrderId={purchaseOrder.id}
-                  />
-                </div>
-              ) : null}
+              {purchaseOrder.emailSubject ? <p className="table-meta">Emne: {purchaseOrder.emailSubject}</p> : null}
             </div>
             <div className="panel-stack">
               <PurchaseOrderStatusSelect
@@ -147,19 +135,15 @@ export default async function PurchaseOrderDetailPage({
             <div className="card-header">
               <div>
                 <p className="kicker">Mail</p>
-                <h2>Mailgrundlag</h2>
+                <h2>Preview før afsendelse</h2>
               </div>
             </div>
-            <div className="two-grid">
-              <div className="card nested-card">
-                <p className="kicker">Mail-emne</p>
-                <p className="mail-draft-box">{purchaseOrder.emailSubject ?? "Intet emne"}</p>
-              </div>
-              <div className="card nested-card">
-                <p className="kicker">Mail-krop</p>
-                <pre className="mail-draft-box multiline">{purchaseOrder.emailBody}</pre>
-              </div>
-            </div>
+            <PurchaseOrderMailEditor
+              purchaseOrderId={purchaseOrder.id}
+              defaultTo={purchaseOrder.supplierEmail}
+              defaultSubject={purchaseOrder.emailSubject ?? ""}
+              defaultBody={purchaseOrder.emailBody}
+            />
           </article>
         ) : null}
       </section>
