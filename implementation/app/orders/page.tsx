@@ -39,24 +39,24 @@ export default async function OrdersPage() {
         <h1>Varebestilling</h1>
         <p>
           Her arbejder varebestilleren direkte med de importerede Jotform-bestillinger. Kun
-          bestillinger, som stadig er i varebestilling, vises her. Når en bestilling godkendes
-          med knappen "Send til ordre", flyttes den ud af denne liste og videre til{" "}
-          <Link href="/purchase-orders">Leverandørordre</Link>.
+          bestillinger, som stadig er i varebestilling, vises her. N&aring;r en bestilling
+          godkendes med knappen "Send til ordre", flyttes den ud af denne liste og videre til{" "}
+          <Link href="/purchase-orders">Leverand&oslash;rordre</Link>.
         </p>
 
         <div className="grid">
           <article className="card">
-            <strong>Åbne bestillinger</strong>
+            <strong>&Aring;bne bestillinger</strong>
             <p className="metric-inline">{orders.length}</p>
             <p className="metric-subtext">{totalLines} linjer i alt</p>
           </article>
           <article className="card">
             <strong>Linjer klar til bestilling</strong>
             <p className="metric-inline">{readyLines}</p>
-            <p className="metric-subtext">{supplierSummary.length} aktive leverandører</p>
+            <p className="metric-subtext">{supplierSummary.length} aktive leverand&oslash;rer</p>
           </article>
           <article className="card">
-            <strong>Kræver handling</strong>
+            <strong>Kr&aelig;ver handling</strong>
             <p className="metric-inline">{actionOrders.length}</p>
             <p className="metric-subtext">{actionLines} linjer skal afklares</p>
           </article>
@@ -64,7 +64,7 @@ export default async function OrdersPage() {
             <strong>Seneste import</strong>
             <p className="metric-inline">{newestOrder ? newestOrder.createdAt : "-"}</p>
             <p>
-              Dry run og miljøstatus findes stadig på <Link href="/">forsiden</Link>.
+              Dry run og milj&oslash;status findes stadig p&aring; <Link href="/">forsiden</Link>.
             </p>
           </article>
         </div>
@@ -75,10 +75,10 @@ export default async function OrdersPage() {
           <div className="card-header">
             <div>
               <p className="kicker">Fokus nu</p>
-              <h2>Handling først</h2>
+              <h2>Handling f&oslash;rst</h2>
             </div>
             <span className={`pill ${actionLines > 0 ? "danger" : "success"}`}>
-              {actionLines > 0 ? `${actionLines} linjer åbne` : "Ingen åbne handlinger"}
+              {actionLines > 0 ? `${actionLines} linjer \u00e5bne` : "Ingen \u00e5bne handlinger"}
             </span>
           </div>
           <div className="insight-list">
@@ -88,7 +88,7 @@ export default async function OrdersPage() {
                   <strong>{order.customerName}</strong>
                   <p>{order.locationLabel}</p>
                 </div>
-                <span className="pill danger">{order.actionRequiredCount} kræver handling</span>
+                <span className="pill danger">{order.actionRequiredCount} kr&aelig;ver handling</span>
               </Link>
             ))}
             {actionOrders.length === 0 && (
@@ -102,10 +102,10 @@ export default async function OrdersPage() {
         <article className="card">
           <div className="card-header">
             <div>
-              <p className="kicker">Klar til næste flow</p>
+              <p className="kicker">Klar til n&aelig;ste flow</p>
               <h2>Send til ordre</h2>
             </div>
-            <span className="pill neutral">{supplierSummary.length} leverandører</span>
+            <span className="pill neutral">{supplierSummary.length} leverand&oslash;rer</span>
           </div>
           <div className="insight-list">
             {supplierSummary.map((supplier) => (
@@ -116,14 +116,14 @@ export default async function OrdersPage() {
                 </div>
                 <span className={`pill ${supplier.actionCount > 0 ? "warning" : "success"}`}>
                   {supplier.actionCount > 0
-                    ? `${supplier.actionCount} kræver afklaring`
+                    ? `${supplier.actionCount} kr\u00e6ver afklaring`
                     : "Klar til Send til ordre"}
                 </span>
               </div>
             ))}
             {supplierSummary.length === 0 && (
               <div className="empty-state-inline">
-                Ingen leverandøroversigt endnu. Importér ordrer for at samle linjer.
+                Ingen leverand&oslash;roversigt endnu. Import&eacute;r ordrer for at samle linjer.
               </div>
             )}
           </div>

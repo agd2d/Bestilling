@@ -3,9 +3,9 @@ import Link from "next/link";
 const navItems = [
   { href: "/", label: "Arbejdsbord" },
   { href: "/orders", label: "Varebestilling" },
-  { href: "/purchase-orders", label: "Leverandørordre" },
+  { href: "/purchase-orders", label: "Leverand\u00f8rordre" },
   { href: "/products", label: "Varekatalog" },
-  { href: "/suppliers", label: "Leverandører" },
+  { href: "/suppliers", label: "Leverand\u00f8rer" },
   { href: "/customer-invoicing", label: "Fakturering til kunde" },
 ];
 
