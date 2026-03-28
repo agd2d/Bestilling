@@ -36,7 +36,9 @@ export async function POST(
         | "material_cost"
         | "resale_consumable"
         | "equipment_purchase"
-        | "subcontractor_purchase";
+        | "subcontractor_purchase"
+        | "window_cleaning_service"
+        | "mat_service";
     };
 
     const result = await updateProduct({

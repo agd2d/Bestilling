@@ -70,6 +70,10 @@ export interface ProductCatalogStats {
   equipmentPurchaseQuantity: number;
   subcontractorPurchaseProducts: number;
   subcontractorPurchaseQuantity: number;
+  windowCleaningServiceProducts: number;
+  windowCleaningServiceQuantity: number;
+  matServiceProducts: number;
+  matServiceQuantity: number;
 }
 
 export interface ProductCatalogResult {
@@ -123,6 +127,16 @@ function buildStats(items: ProductCatalogItem[]): ProductCatalogStats {
     ).length,
     subcontractorPurchaseQuantity: items
       .filter((item) => item.billingCategory === "subcontractor_purchase")
+      .reduce((sum, item) => sum + item.totalQuantity, 0),
+    windowCleaningServiceProducts: items.filter(
+      (item) => item.billingCategory === "window_cleaning_service"
+    ).length,
+    windowCleaningServiceQuantity: items
+      .filter((item) => item.billingCategory === "window_cleaning_service")
+      .reduce((sum, item) => sum + item.totalQuantity, 0),
+    matServiceProducts: items.filter((item) => item.billingCategory === "mat_service").length,
+    matServiceQuantity: items
+      .filter((item) => item.billingCategory === "mat_service")
       .reduce((sum, item) => sum + item.totalQuantity, 0),
   };
 }

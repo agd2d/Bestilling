@@ -25,10 +25,10 @@ export default async function ProductsPage() {
         <p className="kicker">Varekatalog</p>
         <div className="card-header">
           <div>
-            <h1>Varer og statistik</h1>
+            <h1>Varer, ydelser og statistik</h1>
             <p>
-              Her ligger varekartoteket, som binder kundebestillinger, leverandørordrer og senere
-              statistik sammen.
+              Her ligger kataloget for varer og eksterne ydelser, som binder
+              kundebestillinger, leverandørordrer og senere statistik sammen.
             </p>
           </div>
           <span className={`pill ${source === "live" ? "success" : "warning"}`}>
@@ -71,6 +71,16 @@ export default async function ProductsPage() {
             <p className="metric-subtext">{stats.subcontractorPurchaseQuantity} bestilte enheder</p>
           </div>
           <div className="stat-box">
+            <span className="stat-label">Vinduespudsning</span>
+            <strong className="metric-inline">{stats.windowCleaningServiceProducts}</strong>
+            <p className="metric-subtext">{stats.windowCleaningServiceQuantity} bestilte enheder</p>
+          </div>
+          <div className="stat-box">
+            <span className="stat-label">Måtteservice</span>
+            <strong className="metric-inline">{stats.matServiceProducts}</strong>
+            <p className="metric-subtext">{stats.matServiceQuantity} bestilte enheder</p>
+          </div>
+          <div className="stat-box">
             <span className="stat-label">Samlet bestilt antal</span>
             <strong className="metric-inline">{stats.totalOrderedQuantity}</strong>
           </div>
@@ -82,15 +92,15 @@ export default async function ProductsPage() {
           <article className="card">
             <strong>Statistikgrundlag</strong>
             <p className="muted">
-              Statistikken beregnes ud fra varelinjer, der er koblet direkte til katalogets varer,
-              og er nu delt i materialeomkostninger, forbrugsvarer, udstyr og underleverancer.
+              Statistikken beregnes ud fra ordrelinjer, der er koblet direkte til kataloget, og er
+              nu delt i varer samt eksterne ydelser som vinduespudsning og måtteservice.
             </p>
             <p className="metric-inline">{stats.totalOrderedQuantity}</p>
             <p className="metric-subtext">Samlet bestilt antal på tværs af registrerede ordrer</p>
           </article>
 
           <article className="card">
-            <strong>Mest bestilte varer</strong>
+            <strong>Mest bestilte varer og ydelser</strong>
             <div className="insight-list">
               {topProducts.map((product) => (
                 <div className="insight-row static" key={product.id}>
@@ -120,7 +130,7 @@ export default async function ProductsPage() {
           <div className="card-header">
             <div>
               <p className="kicker">Vareliste</p>
-              <h2>Varekartotek</h2>
+              <h2>Vare- og ydelseskartotek</h2>
             </div>
             <span className="pill info">Klar til statistik og fakturering</span>
           </div>

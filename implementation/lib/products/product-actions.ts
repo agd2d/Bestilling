@@ -32,6 +32,8 @@ export async function updateProductBillingCategory(params: {
       "resale_consumable",
       "equipment_purchase",
       "subcontractor_purchase",
+      "window_cleaning_service",
+      "mat_service",
     ].includes(params.billingCategory)
   ) {
     return {
@@ -121,6 +123,8 @@ export async function updateProduct(params: {
       "resale_consumable",
       "equipment_purchase",
       "subcontractor_purchase",
+      "window_cleaning_service",
+      "mat_service",
     ].includes(params.billingCategory)
   ) {
     return {

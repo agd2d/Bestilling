@@ -240,6 +240,10 @@ export default function ProductRowEditor({ product, suppliers }: ProductRowEdito
                   <option value="subcontractor_purchase">
                     {formatProductBillingCategory('subcontractor_purchase')}
                   </option>
+                  <option value="window_cleaning_service">
+                    {formatProductBillingCategory('window_cleaning_service')}
+                  </option>
+                  <option value="mat_service">{formatProductBillingCategory('mat_service')}</option>
                 </select>
               </label>
             </div>
