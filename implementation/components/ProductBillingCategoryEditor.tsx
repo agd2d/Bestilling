@@ -57,6 +57,10 @@ export default function ProductBillingCategoryEditor({
       >
         <option value="material_cost">{formatProductBillingCategory('material_cost')}</option>
         <option value="resale_consumable">{formatProductBillingCategory('resale_consumable')}</option>
+        <option value="equipment_purchase">{formatProductBillingCategory('equipment_purchase')}</option>
+        <option value="subcontractor_purchase">
+          {formatProductBillingCategory('subcontractor_purchase')}
+        </option>
       </select>
       {message ? <p className="table-meta">{message}</p> : null}
     </div>

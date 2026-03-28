@@ -24,7 +24,14 @@ export async function updateProductBillingCategory(params: {
     };
   }
 
-  if (!["material_cost", "resale_consumable"].includes(params.billingCategory)) {
+  if (
+    ![
+      "material_cost",
+      "resale_consumable",
+      "equipment_purchase",
+      "subcontractor_purchase",
+    ].includes(params.billingCategory)
+  ) {
     return {
       success: false,
       source: "mock",

@@ -25,7 +25,13 @@ export async function POST(
     }
 
     const { id } = await context.params;
-    const payload = (await request.json()) as { billingCategory?: "material_cost" | "resale_consumable" };
+    const payload = (await request.json()) as {
+      billingCategory?:
+        | "material_cost"
+        | "resale_consumable"
+        | "equipment_purchase"
+        | "subcontractor_purchase";
+    };
 
     const result = await updateProductBillingCategory({
       id,

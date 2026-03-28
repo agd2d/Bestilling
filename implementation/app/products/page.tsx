@@ -61,6 +61,16 @@ export default async function ProductsPage() {
             <p className="metric-subtext">{stats.resaleConsumableQuantity} bestilte enheder</p>
           </div>
           <div className="stat-box">
+            <span className="stat-label">Indkøb af udstyr</span>
+            <strong className="metric-inline">{stats.equipmentPurchaseProducts}</strong>
+            <p className="metric-subtext">{stats.equipmentPurchaseQuantity} bestilte enheder</p>
+          </div>
+          <div className="stat-box">
+            <span className="stat-label">Indkøb af underleverance</span>
+            <strong className="metric-inline">{stats.subcontractorPurchaseProducts}</strong>
+            <p className="metric-subtext">{stats.subcontractorPurchaseQuantity} bestilte enheder</p>
+          </div>
+          <div className="stat-box">
             <span className="stat-label">Samlet bestilt antal</span>
             <strong className="metric-inline">{stats.totalOrderedQuantity}</strong>
           </div>
@@ -73,7 +83,7 @@ export default async function ProductsPage() {
             <strong>Statistikgrundlag</strong>
             <p className="muted">
               Statistikken beregnes ud fra varelinjer, der er koblet direkte til katalogets varer,
-              og er nu delt i materialeomkostninger og varer der skal faktureres videre.
+              og er nu delt i materialeomkostninger, forbrugsvarer, udstyr og underleverancer.
             </p>
             <p className="metric-inline">{stats.totalOrderedQuantity}</p>
             <p className="metric-subtext">Samlet bestilt antal på tværs af registrerede ordrer</p>

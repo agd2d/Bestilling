@@ -60,6 +60,10 @@ export interface ProductCatalogStats {
   materialCostQuantity: number;
   resaleConsumableProducts: number;
   resaleConsumableQuantity: number;
+  equipmentPurchaseProducts: number;
+  equipmentPurchaseQuantity: number;
+  subcontractorPurchaseProducts: number;
+  subcontractorPurchaseQuantity: number;
 }
 
 export interface ProductCatalogResult {
@@ -101,6 +105,17 @@ function buildStats(items: ProductCatalogItem[]): ProductCatalogStats {
       .length,
     resaleConsumableQuantity: items
       .filter((item) => item.billingCategory === "resale_consumable")
+      .reduce((sum, item) => sum + item.totalQuantity, 0),
+    equipmentPurchaseProducts: items.filter((item) => item.billingCategory === "equipment_purchase")
+      .length,
+    equipmentPurchaseQuantity: items
+      .filter((item) => item.billingCategory === "equipment_purchase")
+      .reduce((sum, item) => sum + item.totalQuantity, 0),
+    subcontractorPurchaseProducts: items.filter(
+      (item) => item.billingCategory === "subcontractor_purchase"
+    ).length,
+    subcontractorPurchaseQuantity: items
+      .filter((item) => item.billingCategory === "subcontractor_purchase")
       .reduce((sum, item) => sum + item.totalQuantity, 0),
   };
 }
