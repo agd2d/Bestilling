@@ -34,6 +34,7 @@ export interface ProductOption {
   supplierId: string | null;
   supplierName: string;
   unit: string | null;
+  billingCategory?: "material_cost" | "resale_consumable";
 }
 
 export interface SupplierOption {
@@ -54,6 +55,7 @@ export const mockProducts: ProductOption[] = [
     supplierId: "supplier-total-rent",
     supplierName: "Total Rent",
     unit: "rulle",
+    billingCategory: "resale_consumable",
   },
   {
     id: "product-tr-44210",
@@ -62,6 +64,7 @@ export const mockProducts: ProductOption[] = [
     supplierId: "supplier-total-rent",
     supplierName: "Total Rent",
     unit: "pakke",
+    billingCategory: "resale_consumable",
   },
   {
     id: "product-ab-2811",
@@ -70,6 +73,7 @@ export const mockProducts: ProductOption[] = [
     supplierId: "supplier-abena",
     supplierName: "Abena",
     unit: "pakke",
+    billingCategory: "resale_consumable",
   },
   {
     id: "product-tr-21100",
@@ -78,6 +82,7 @@ export const mockProducts: ProductOption[] = [
     supplierId: "supplier-total-rent",
     supplierName: "Total Rent",
     unit: "dunk",
+    billingCategory: "material_cost",
   },
 ];
 

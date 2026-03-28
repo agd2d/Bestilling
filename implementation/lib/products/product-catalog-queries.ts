@@ -1,5 +1,10 @@
 import { hasEnv } from "@/lib/env";
 import { mockOrders, mockProducts } from "@/lib/orders/mock-orders";
+import {
+  formatProductBillingCategory,
+  productBillingCategoryTone,
+  type ProductBillingCategory,
+} from "@/lib/products/product-category";
 import { createAdminClient } from "@/lib/supabase/server";
 
 interface ProductRow {
@@ -10,6 +15,7 @@ interface ProductRow {
   unit: string | null;
   default_price: number | null;
   is_active: boolean | null;
+  billing_category: ProductBillingCategory | null;
   created_at: string | null;
 }
 
@@ -37,6 +43,9 @@ export interface ProductCatalogItem {
   unit: string;
   defaultPrice: number | null;
   isActive: boolean;
+  billingCategory: ProductBillingCategory;
+  billingCategoryLabel: string;
+  billingCategoryTone: string;
   usageCount: number;
   totalQuantity: number;
   lastOrderedAt: string | null;
@@ -47,6 +56,10 @@ export interface ProductCatalogStats {
   activeProducts: number;
   usedProducts: number;
   totalOrderedQuantity: number;
+  materialCostProducts: number;
+  materialCostQuantity: number;
+  resaleConsumableProducts: number;
+  resaleConsumableQuantity: number;
 }
 
 export interface ProductCatalogResult {
@@ -74,6 +87,24 @@ function formatDate(value: string | null) {
   });
 }
 
+function buildStats(items: ProductCatalogItem[]): ProductCatalogStats {
+  return {
+    totalProducts: items.length,
+    activeProducts: items.filter((item) => item.isActive).length,
+    usedProducts: items.filter((item) => item.usageCount > 0).length,
+    totalOrderedQuantity: items.reduce((sum, item) => sum + item.totalQuantity, 0),
+    materialCostProducts: items.filter((item) => item.billingCategory === "material_cost").length,
+    materialCostQuantity: items
+      .filter((item) => item.billingCategory === "material_cost")
+      .reduce((sum, item) => sum + item.totalQuantity, 0),
+    resaleConsumableProducts: items.filter((item) => item.billingCategory === "resale_consumable")
+      .length,
+    resaleConsumableQuantity: items
+      .filter((item) => item.billingCategory === "resale_consumable")
+      .reduce((sum, item) => sum + item.totalQuantity, 0),
+  };
+}
+
 function getMockCatalog(): ProductCatalogResult {
   const items = mockProducts.map((product) => {
     const matchingOrders = mockOrders.filter((order) =>
@@ -82,6 +113,7 @@ function getMockCatalog(): ProductCatalogResult {
     const relatedLines = matchingOrders.flatMap((order) =>
       order.lines.filter((line) => line.productId === product.id)
     );
+    const billingCategory = product.billingCategory ?? "resale_consumable";
 
     return {
       id: product.id,
@@ -91,6 +123,9 @@ function getMockCatalog(): ProductCatalogResult {
       unit: product.unit ?? "-",
       defaultPrice: null,
       isActive: true,
+      billingCategory,
+      billingCategoryLabel: formatProductBillingCategory(billingCategory),
+      billingCategoryTone: productBillingCategoryTone(billingCategory),
       usageCount: relatedLines.length,
       totalQuantity: relatedLines.reduce((sum, line) => sum + line.quantity, 0),
       lastOrderedAt: matchingOrders.map((order) => order.createdAt).sort().at(-1) ?? null,
@@ -99,12 +134,7 @@ function getMockCatalog(): ProductCatalogResult {
 
   return {
     items,
-    stats: {
-      totalProducts: items.length,
-      activeProducts: items.filter((item) => item.isActive).length,
-      usedProducts: items.filter((item) => item.usageCount > 0).length,
-      totalOrderedQuantity: items.reduce((sum, item) => sum + item.totalQuantity, 0),
-    },
+    stats: buildStats(items),
     source: "mock",
     message: "Miljøvariabler mangler stadig, derfor vises mockdata.",
   };
@@ -125,7 +155,9 @@ export async function getProductCatalogData(): Promise<ProductCatalogResult> {
     ] = await Promise.all([
       supabase
         .from("products")
-        .select("id, product_number, name, supplier_id, unit, default_price, is_active, created_at")
+        .select(
+          "id, product_number, name, supplier_id, unit, default_price, is_active, billing_category, created_at"
+        )
         .order("product_number"),
       supabase.from("suppliers").select("id, name"),
       supabase
@@ -179,6 +211,7 @@ export async function getProductCatalogData(): Promise<ProductCatalogResult> {
 
     const items = ((products ?? []) as ProductRow[]).map((product) => {
       const usage = usageMap.get(product.id);
+      const billingCategory = product.billing_category ?? "resale_consumable";
 
       return {
         id: product.id,
@@ -190,6 +223,9 @@ export async function getProductCatalogData(): Promise<ProductCatalogResult> {
         unit: product.unit ?? "-",
         defaultPrice: product.default_price,
         isActive: product.is_active ?? true,
+        billingCategory,
+        billingCategoryLabel: formatProductBillingCategory(billingCategory),
+        billingCategoryTone: productBillingCategoryTone(billingCategory),
         usageCount: usage?.usageCount ?? 0,
         totalQuantity: usage?.totalQuantity ?? 0,
         lastOrderedAt: formatDate(usage?.lastOrderedAt ?? product.created_at),
@@ -198,12 +234,7 @@ export async function getProductCatalogData(): Promise<ProductCatalogResult> {
 
     return {
       items,
-      stats: {
-        totalProducts: items.length,
-        activeProducts: items.filter((item) => item.isActive).length,
-        usedProducts: items.filter((item) => item.usageCount > 0).length,
-        totalOrderedQuantity: items.reduce((sum, item) => sum + item.totalQuantity, 0),
-      },
+      stats: buildStats(items),
       source: "live",
       message: "Varekatalog og varestatistik hentes nu fra Supabase.",
     };

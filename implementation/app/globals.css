@@ -429,6 +429,10 @@ a {
   gap: 12px;
 }
 
+.products-stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .stat-box {
   padding: 14px;
   border-radius: 16px;
@@ -489,6 +493,12 @@ a {
   border-radius: 12px;
   padding: 8px 10px;
   background: #fffdf8;
+}
+
+.product-category-cell {
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
 }
 
 .notes-list {
