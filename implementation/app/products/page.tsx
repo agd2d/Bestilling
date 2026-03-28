@@ -1,4 +1,4 @@
-import ProductBillingCategoryEditor from "@/components/ProductBillingCategoryEditor";
+import ProductRowEditor from "@/components/ProductRowEditor";
 import { getProductCatalogData } from "@/lib/products/product-catalog-queries";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ function formatPrice(value: number | null) {
 }
 
 export default async function ProductsPage() {
-  const { items, stats, source, message } = await getProductCatalogData();
+  const { items, suppliers, stats, source, message } = await getProductCatalogData();
   const topProducts = [...items].sort((a, b) => b.totalQuantity - a.totalQuantity).slice(0, 5);
 
   return (
@@ -139,6 +139,7 @@ export default async function ProductsPage() {
                   <th>Ordrelinjer</th>
                   <th>Antal bestilt</th>
                   <th>Senest brugt</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -154,10 +155,6 @@ export default async function ProductsPage() {
                         <span className={`pill ${product.billingCategoryTone}`}>
                           {product.billingCategoryLabel}
                         </span>
-                        <ProductBillingCategoryEditor
-                          productId={product.id}
-                          initialCategory={product.billingCategory}
-                        />
                       </div>
                     </td>
                     <td>{product.unit}</td>
@@ -170,6 +167,9 @@ export default async function ProductsPage() {
                     <td>{product.usageCount}</td>
                     <td>{product.totalQuantity}</td>
                     <td>{product.lastOrderedAt ?? "-"}</td>
+                    <td className="action-cell">
+                      <ProductRowEditor product={product} suppliers={suppliers} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

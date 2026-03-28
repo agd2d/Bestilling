@@ -24,6 +24,11 @@ interface SupplierRow {
   name: string;
 }
 
+export interface ProductCatalogSupplierOption {
+  id: string;
+  name: string;
+}
+
 interface RequestLineRow {
   request_id: string;
   product_id: string | null;
@@ -39,6 +44,7 @@ export interface ProductCatalogItem {
   id: string;
   productNumber: string;
   name: string;
+  supplierId: string | null;
   supplierName: string;
   unit: string;
   defaultPrice: number | null;
@@ -68,6 +74,7 @@ export interface ProductCatalogStats {
 
 export interface ProductCatalogResult {
   items: ProductCatalogItem[];
+  suppliers: ProductCatalogSupplierOption[];
   stats: ProductCatalogStats;
   source: "live" | "mock";
   message?: string;
@@ -134,6 +141,7 @@ function getMockCatalog(): ProductCatalogResult {
       id: product.id,
       productNumber: product.productNumber,
       name: product.name,
+      supplierId: null,
       supplierName: product.supplierName,
       unit: product.unit ?? "-",
       defaultPrice: null,
@@ -149,6 +157,7 @@ function getMockCatalog(): ProductCatalogResult {
 
   return {
     items,
+    suppliers: [],
     stats: buildStats(items),
     source: "mock",
     message: "Miljøvariabler mangler stadig, derfor vises mockdata.",
@@ -232,6 +241,7 @@ export async function getProductCatalogData(): Promise<ProductCatalogResult> {
         id: product.id,
         productNumber: product.product_number,
         name: product.name,
+        supplierId: product.supplier_id,
         supplierName: product.supplier_id
           ? supplierMap.get(product.supplier_id) ?? "Ukendt leverandør"
           : "Ukendt leverandør",
@@ -249,6 +259,10 @@ export async function getProductCatalogData(): Promise<ProductCatalogResult> {
 
     return {
       items,
+      suppliers: ((suppliers ?? []) as SupplierRow[]).map((supplier) => ({
+        id: supplier.id,
+        name: supplier.name,
+      })),
       stats: buildStats(items),
       source: "live",
       message: "Varekatalog og varestatistik hentes nu fra Supabase.",

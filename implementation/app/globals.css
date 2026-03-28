@@ -496,9 +496,36 @@ a {
 }
 
 .product-category-cell {
-  display: grid;
-  gap: 8px;
-  min-width: 220px;
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+}
+
+.action-cell {
+  width: 56px;
+  text-align: right !important;
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd5c8;
+  border-radius: 999px;
+  background: #fffefb;
+  color: #245741;
+  cursor: pointer;
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.compact-dialog {
+  width: min(100%, 720px);
 }
 
 .notes-list {
